@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 3838809983440574018}
   - component: {fileID: 6455977875009766355}
   - component: {fileID: 3684528285329596566}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -77,9 +77,9 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingLayerID: -1789029367
+  m_SortingLayer: 2
+  m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 823d0209d66225846aebc1e64c6d02de, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -108,9 +108,12 @@ MonoBehaviour:
   bodyPrefab: {fileID: 2104995442288989565, guid: d15b87d68706deb4898c0665951a5101, type: 3}
   tailPrefab: {fileID: 8398028049411720518, guid: e65b12b775425004bb75aaa3e2778a71, type: 3}
   initialBodyCount: 6
-  obstacleLayer:
+  NoMoveLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 0
+  WormBodyLayer:
+    serializedVersion: 2
+    m_Bits: 0
   bodyStraight: {fileID: 21300000, guid: 7db68960b21492a45a781f2da3d4ae11, type: 3}
   cornerTopRight: {fileID: 21300000, guid: d7f083bc8bd3a9542a40356b6c5d910d, type: 3}
   cornerTopLeft: {fileID: 21300000, guid: 8b973954708a5f94a8f0f060a41af90f, type: 3}
@@ -152,17 +155,17 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0.0013229847}
+  m_Offset: {x: -0.0013198853, y: 0.0000032186508}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.91, y: 0.85}
+    oldSize: {x: 0.8666667, y: 0.8095238}
     newSize: {x: 0.58709675, y: 0.5483871}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.0209827, y: 0.9531708}
+  m_Size: {x: 0.87580585, y: 0.8238313}
   m_EdgeRadius: 0
 --- !u!50 &3684528285329596566
 Rigidbody2D:
@@ -201,7 +204,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4026717173858422959}
   - component: {fileID: 7557807204853375527}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Face
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -275,6 +278,6 @@ SpriteRenderer:
   m_Size: {x: 1.34, y: 0.95}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0

@@ -8,14 +8,14 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Obstacle
   - Water
   - UI
-  - Tail
-  - Body
+  - Map
+  - WormBodyLayer
+  - NoMoveLayer
   - 
   - 
-  - NoMove
   - 
   - 
   - 
@@ -40,6 +40,30 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Map
+    uniqueID: 4136473863
+    locked: 0
+  - name: Player
+    uniqueID: 2505937929
+    locked: 0
+  - name: Banana
+    uniqueID: 260286787
+    locked: 0
+  - name: Decice
+    uniqueID: 3343195205
+    locked: 0
+  - name: Freeze
+    uniqueID: 110129019
+    locked: 0
+  - name: Wood
+    uniqueID: 741447579
+    locked: 0
+  - name: Stone
+    uniqueID: 4120970111
+    locked: 0
+  - name: New Layer 8
+    uniqueID: 763182507
     locked: 0
   m_RenderingLayers:
   - Default

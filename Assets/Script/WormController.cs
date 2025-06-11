@@ -2,6 +2,7 @@
 using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 
 public class WormMovement : MonoBehaviour
 {
@@ -13,12 +14,17 @@ public class WormMovement : MonoBehaviour
     public GameObject tailPrefab;
     public int initialBodyCount = 3;
 
-    public LayerMask obstacleLayer;
+    private bool isReversed = false;
+
+    public LayerMask NoMoveLayer;
+    public LayerMask WormBodyLayer;
+    public LayerMask StopFlyLayer;
 
     private List<Transform> bodyParts = new List<Transform>();
     private List<Vector3> positionHistory = new List<Vector3>();
     private List<Direction> directionHistory = new List<Direction>();
     private Direction currentDirection;
+    private Tween flyTween;
 
     public Sprite bodyStraight;
     public Sprite cornerTopRight;
@@ -37,16 +43,21 @@ public class WormMovement : MonoBehaviour
         currentDirection = Direction.Down;
         movementDirection = Vector3.down;
 
-        Vector3 spawnDir = Vector3.up;
         Vector3 lastPos = transform.position;
 
         positionHistory.Add(lastPos);
         directionHistory.Add(currentDirection);
-
+        Transform wormRoot = transform.parent;
         for (int i = 0; i < initialBodyCount; i++)
         {
             lastPos += Vector3.up * moveStepY;
             GameObject part = Instantiate(bodyPrefab, lastPos, Quaternion.identity);
+
+            part.transform.SetParent(wormRoot);
+
+            // Gán layer WormBodyLayer cho thân giun
+            part.layer = LayerMask.NameToLayer("WormBodyLayer");
+
             bodyParts.Add(part.transform);
             positionHistory.Add(lastPos);
             directionHistory.Add(currentDirection);
@@ -54,14 +65,25 @@ public class WormMovement : MonoBehaviour
 
         lastPos += Vector3.up * moveStepY;
         GameObject tail = Instantiate(tailPrefab, lastPos, Quaternion.identity);
+
+        tail.transform.SetParent(wormRoot);
+
+        // Gán layer WormBodyLayer cho đuôi
+        tail.layer = LayerMask.NameToLayer("WormBodyLayer");
+
         bodyParts.Add(tail.transform);
         UpdateTailRotation();
         positionHistory.Add(lastPos);
         directionHistory.Add(currentDirection);
+
     }
 
     void Update()
     {
+        if (isReversed)
+        {
+            return;
+        }
         if (!canMove) return;
 
         Vector3 moveDir = Vector3.zero;
@@ -111,8 +133,54 @@ public class WormMovement : MonoBehaviour
 
         if (moveDir != Vector3.zero)
         {
-            if (IsPathBlocked(newDirection))
-                return;
+            Vector3 nextPos = transform.position + GetMovementStep(newDirection);
+
+            // Kiểm tra vật cản thuộc NoMoveLayer (không tính thân giun)
+            Collider2D obstacle = Physics2D.OverlapCircle(nextPos, 0.1f, NoMoveLayer);
+            if (obstacle != null)
+            {
+                // Nếu vật cản là thân giun thì bỏ qua
+                if (obstacle.gameObject.layer != LayerMask.NameToLayer("WormBodyLayer"))
+                {
+                    return;
+                }
+            }
+
+            Collider2D hitCollider = Physics2D.OverlapCircle(nextPos, 0.1f);
+            if (hitCollider != null)
+            {
+                PushableItem pushable = hitCollider.GetComponent<PushableItem>();
+                if (pushable != null)
+                {
+                    bool pushed = pushable.TryPush(GetMovementStep(newDirection));
+                    if (!pushed)
+                    {
+                        Banana banana = pushable.GetComponent<Banana>();
+                        if (banana != null)
+                        {
+                            banana.Eat();
+                            GrowBody();
+                        }
+                        else
+                        {
+                            Medicine medicine = pushable.GetComponent<Medicine>();
+                            if (medicine != null)
+                            {
+                                medicine.Eat();
+                                TriggerReverseMovement(movementDirection);
+                            }
+                            else
+                            {
+                                return;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
 
             Vector3 newPosition = transform.position + GetMovementStep(newDirection);
 
@@ -149,14 +217,70 @@ public class WormMovement : MonoBehaviour
         }
     }
 
-    bool IsPathBlocked(Direction dir)
+    public void TriggerReverseMovement(Vector3 currentMoveDir)
     {
-        Vector3 checkOffset = GetMovementStep(dir);
-        Vector3 checkPosition = transform.position + checkOffset;
-        float checkRadius = 0.1f;
+        Transform wormRoot = transform.parent;
 
-        Collider2D hitCollider = Physics2D.OverlapCircle(checkPosition, checkRadius, obstacleLayer);
-        return hitCollider != null;
+        if (flyTween != null && flyTween.IsActive())
+            flyTween.Kill();
+
+        canMove = false;
+        isReversed = true;
+
+        Vector3 moveDir = currentMoveDir.normalized * -1f;
+
+        flyTween = DOTween.To(() => wormRoot.position,
+                      x => wormRoot.position = x,
+                      wormRoot.position + moveDir,
+                      0.2f)
+     .SetEase(Ease.Linear)
+     .SetLoops(-1, LoopType.Incremental)
+     .OnUpdate(() =>
+     {
+         if (IsCollidingWithStopFly())
+         {
+             flyTween.Kill(true); // ⬅ dừng ngay lập tức, không "hoàn tất" tween frame hiện tại
+
+             UpdateHistoryAfterReverse();
+
+             canMove = true;
+             isReversed = false;
+         }
+     });
+
+    }
+    bool IsCollidingWithStopFly()
+    {
+        Transform wormRoot = transform.parent;
+        foreach (Transform part in wormRoot)
+        {
+            Collider2D hit = Physics2D.OverlapCircle(part.position, 0.45f, NoMoveLayer);
+            if (hit != null)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void GrowBody()
+    {
+        Vector3 tailPos = bodyParts[bodyParts.Count - 1].position;
+        Vector3 beforeTailPos = bodyParts[bodyParts.Count - 2].position;
+
+        Vector3 dir = (tailPos - beforeTailPos).normalized;
+
+        Vector3 spawnPos = tailPos + dir * GetMovementStep(currentDirection).magnitude;
+
+        GameObject newBody = Instantiate(bodyPrefab, spawnPos, Quaternion.identity);
+        newBody.transform.SetParent(transform.parent);
+
+        newBody.layer = LayerMask.NameToLayer("WormBodyLayer");
+
+        bodyParts.Insert(bodyParts.Count - 1, newBody.transform);
+
+        positionHistory.Add(spawnPos);
+        directionHistory.Add(currentDirection);
     }
 
     Vector3 GetMovementStep(Direction dir)
@@ -235,4 +359,39 @@ public class WormMovement : MonoBehaviour
 
         return bodyVertical;
     }
+    void UpdateHistoryAfterReverse()
+    {
+        positionHistory.Clear();
+        directionHistory.Clear();
+
+        // Ghi lại vị trí đầu
+        positionHistory.Add(transform.position);
+
+        foreach (Transform part in bodyParts)
+        {
+            positionHistory.Add(part.position);
+        }
+
+        // Ghi lại hướng giữa từng cặp điểm
+        for (int i = 0; i < positionHistory.Count - 1; i++)
+        {
+            Vector3 dir = positionHistory[i] - positionHistory[i + 1];
+            directionHistory.Add(DirectionFromVector(dir));
+        }
+
+        // Đảm bảo có đủ số hướng để dùng
+        directionHistory.Add(directionHistory[directionHistory.Count - 1]);
+    }
+
+    Direction DirectionFromVector(Vector3 dir)
+    {
+        dir = dir.normalized;
+        if (dir == Vector3.up) return Direction.Up;
+        if (dir == Vector3.down) return Direction.Down;
+        if (dir == Vector3.left) return Direction.Left;
+        if (dir == Vector3.right) return Direction.Right;
+        return currentDirection; // fallback
+    }
+
+
 }
