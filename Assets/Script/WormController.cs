@@ -5,14 +5,15 @@ using System.Collections.Generic;
 
 public class WormMovement : MonoBehaviour
 {
-    public float moveStep = 1.0f;
+    public float moveStepX = 1.0f;
+    public float moveStepY = 1.0f;
     private bool canMove = true;
 
     public GameObject bodyPrefab;
     public GameObject tailPrefab;
     public int initialBodyCount = 3;
 
-    public LayerMask obstacleLayer; // Layer chứa các phần thân, đuôi (đặt layer này trong Inspector)
+    public LayerMask obstacleLayer;
 
     private List<Transform> bodyParts = new List<Transform>();
     private List<Vector3> positionHistory = new List<Vector3>();
@@ -29,33 +30,29 @@ public class WormMovement : MonoBehaviour
 
     private enum Direction { Up, Down, Left, Right }
 
-    // Thêm biến để lưu hướng di chuyển hiện tại
     private Vector3 movementDirection;
 
     void Start()
     {
         currentDirection = Direction.Down;
-        movementDirection = Vector3.down; // hướng ban đầu
+        movementDirection = Vector3.down;
 
         Vector3 spawnDir = Vector3.up;
         Vector3 lastPos = transform.position;
 
-        // Thêm vị trí đầu vào lịch sử
         positionHistory.Add(lastPos);
         directionHistory.Add(currentDirection);
 
-        // Tạo thân
         for (int i = 0; i < initialBodyCount; i++)
         {
-            lastPos += spawnDir * moveStep;
+            lastPos += Vector3.up * moveStepY;
             GameObject part = Instantiate(bodyPrefab, lastPos, Quaternion.identity);
             bodyParts.Add(part.transform);
             positionHistory.Add(lastPos);
             directionHistory.Add(currentDirection);
         }
 
-        // Tạo đuôi
-        lastPos += spawnDir * moveStep;
+        lastPos += Vector3.up * moveStepY;
         GameObject tail = Instantiate(tailPrefab, lastPos, Quaternion.identity);
         bodyParts.Add(tail.transform);
         UpdateTailRotation();
@@ -71,7 +68,6 @@ public class WormMovement : MonoBehaviour
         float rotationZ = 0f;
         Direction newDirection = currentDirection;
 
-        // Xử lý input
         if (Keyboard.current.wKey.wasPressedThisFrame || Keyboard.current.upArrowKey.wasPressedThisFrame)
         {
             if (currentDirection != Direction.Down)
@@ -115,16 +111,11 @@ public class WormMovement : MonoBehaviour
 
         if (moveDir != Vector3.zero)
         {
-            // Kiểm tra xem đường có bị chặn hay không
-            if (IsPathBlocked())
-            {
-                // Đường bị chặn, không di chuyển
+            if (IsPathBlocked(newDirection))
                 return;
-            }
 
-            Vector3 newPosition = transform.position + moveDir * moveStep;
+            Vector3 newPosition = transform.position + GetMovementStep(newDirection);
 
-            // Thêm vào lịch sử
             positionHistory.Insert(0, newPosition);
             if (positionHistory.Count > bodyParts.Count + 1)
                 positionHistory.RemoveAt(positionHistory.Count - 1);
@@ -133,15 +124,13 @@ public class WormMovement : MonoBehaviour
             if (directionHistory.Count > bodyParts.Count + 1)
                 directionHistory.RemoveAt(directionHistory.Count - 1);
 
-            // Cập nhật vị trí của đầu
             transform.position = newPosition;
             transform.rotation = Quaternion.Euler(0f, 0f, rotationZ);
             currentDirection = newDirection;
 
-            // Cập nhật vị trí của các phần thân theo lịch sử
             for (int i = 0; i < bodyParts.Count; i++)
             {
-                int historyIndex = i + 1; // Vì positionHistory[0] là đầu
+                int historyIndex = i + 1;
                 if (historyIndex < positionHistory.Count)
                 {
                     bodyParts[i].position = positionHistory[historyIndex];
@@ -160,23 +149,36 @@ public class WormMovement : MonoBehaviour
         }
     }
 
-    // Hàm kiểm tra đường đi có bị chặn không
-    bool IsPathBlocked()
+    bool IsPathBlocked(Direction dir)
     {
-        Vector3 checkPosition = transform.position + movementDirection * moveStep;
-        float checkRadius = 0.1f; // điều chỉnh phù hợp
+        Vector3 checkOffset = GetMovementStep(dir);
+        Vector3 checkPosition = transform.position + checkOffset;
+        float checkRadius = 0.1f;
+
         Collider2D hitCollider = Physics2D.OverlapCircle(checkPosition, checkRadius, obstacleLayer);
-        if (hitCollider != null)
+        return hitCollider != null;
+    }
+
+    Vector3 GetMovementStep(Direction dir)
+    {
+        switch (dir)
         {
-            // Có phần thân hoặc đuôi chắn đường
-            return true;
+            case Direction.Up:
+                return Vector3.up * moveStepY;
+            case Direction.Down:
+                return Vector3.down * moveStepY;
+            case Direction.Left:
+                return Vector3.left * moveStepX;
+            case Direction.Right:
+                return Vector3.right * moveStepX;
+            default:
+                return Vector3.zero;
         }
-        return false;
     }
 
     void UpdateTailRotation()
     {
-        if (bodyParts.Count < 2) return; // Không có đuôi hoặc không đủ phần
+        if (bodyParts.Count < 2) return;
 
         Transform tail = bodyParts[bodyParts.Count - 1];
         Transform beforeTail = bodyParts[bodyParts.Count - 2];
@@ -185,25 +187,21 @@ public class WormMovement : MonoBehaviour
 
         float angle = -90f;
 
-        // Xác định góc dựa trên hướng của phần thân phía trước đuôi
         if (Mathf.Abs(directionToHead.x) > Mathf.Abs(directionToHead.y))
         {
-            // Ngang
             if (directionToHead.x > 0)
-                angle = 180f; // hướng phải
+                angle = 180f;
             else
-                angle = 0f; // hướng trái
+                angle = 0f;
         }
         else
         {
-            // Dọc
             if (directionToHead.y > 0)
-                angle = -90f; // hướng lên
+                angle = -90f;
             else
-                angle = 90f; // hướng xuống
+                angle = 90f;
         }
 
-        // Áp dụng rotation cho đuôi
         tail.localRotation = Quaternion.Euler(0f, 0f, angle);
     }
 
@@ -218,7 +216,6 @@ public class WormMovement : MonoBehaviour
     {
         if (prevDir == currDir)
         {
-            // Đoạn thân thẳng
             if (currDir == Direction.Left || currDir == Direction.Right)
                 return bodyHorizontal;
             else
@@ -226,7 +223,6 @@ public class WormMovement : MonoBehaviour
         }
         else
         {
-            // Đoạn thân góc
             if ((prevDir == Direction.Up && currDir == Direction.Left) || (prevDir == Direction.Right && currDir == Direction.Down))
                 return cornerTopRight;
             if ((prevDir == Direction.Up && currDir == Direction.Right) || (prevDir == Direction.Left && currDir == Direction.Down))
@@ -236,7 +232,7 @@ public class WormMovement : MonoBehaviour
             if ((prevDir == Direction.Down && currDir == Direction.Right) || (prevDir == Direction.Left && currDir == Direction.Up))
                 return cornerBottomLeft;
         }
-        // Trường hợp không xác định, giữ sprite mặc định
+
         return bodyVertical;
     }
 }
