@@ -196,8 +196,8 @@ public class WormMovement : MonoBehaviour
                             if (medicine != null)
                             {
                                 medicine.Eat();
-                                TriggerReverseMovement(movementDirection);
-                                SetFaceEatMedicine();
+                                StartCoroutine(HandleEatMedicine(movementDirection));
+
                             }
                             else
                             {
@@ -477,4 +477,16 @@ public class WormMovement : MonoBehaviour
         if (dir == Vector3.right) return Direction.Right;
         return currentDirection;
     }
+    IEnumerator HandleEatMedicine(Vector3 currentMoveDir)
+    {
+        headFaceRenderer.sprite = faceEatMedicine;
+        yield return new WaitForSeconds(0.5f);
+
+        headFaceRenderer.sprite = faceEatMedicinev2;
+        mouthRenderer.enabled = true;
+        rainbowRenderer.enabled = true;
+
+        TriggerReverseMovement(currentMoveDir);
+    }
+
 }
