@@ -254,7 +254,7 @@ public class WormMovement : MonoBehaviour
         Transform wormRoot = transform.parent;
         foreach (Transform part in wormRoot)
         {
-            Collider2D hit = Physics2D.OverlapCircle(part.position, 0.45f, NoMoveLayer);
+            Collider2D hit = Physics2D.OverlapCircle(part.position, 0.4f, NoMoveLayer);
             if (hit != null)
             {
                 return true;

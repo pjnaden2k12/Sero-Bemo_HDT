@@ -17,11 +17,11 @@ public class PushableItem : MonoBehaviour
     private Tween floatTweenVisual;
     private Tween floatTweenShadow;
 
-    protected virtual void Start()
+    void Start()
     {
         StartFloating();
     }
-       
+
     void StartFloating()
     {
         if (visualTransform != null)
@@ -38,7 +38,7 @@ public class PushableItem : MonoBehaviour
         }
     }
 
-    public virtual bool TryPush(Vector3 direction)
+    public bool TryPush(Vector3 direction)
     {
         Vector3 targetPos = transform.position + direction;
         Collider2D hit = Physics2D.OverlapCircle(targetPos, 0.1f, obstacleLayer | noMoveLayer);
@@ -70,11 +70,4 @@ public class PushableItem : MonoBehaviour
         floatTweenVisual?.Kill();
         floatTweenShadow?.Kill();
     }
-    public virtual void OnEaten()
-    {
-        KillTweens();
-        Destroy(gameObject);
-    }
-
-
 }
