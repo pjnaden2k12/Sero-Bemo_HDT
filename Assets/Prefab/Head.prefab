@@ -105,6 +105,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveStepX: 1
   moveStepY: 1
+  smokeEffectPrefab: {fileID: 0}
   bodyPrefab: {fileID: 2104995442288989565, guid: d15b87d68706deb4898c0665951a5101, type: 3}
   tailPrefab: {fileID: 8398028049411720518, guid: e65b12b775425004bb75aaa3e2778a71, type: 3}
   initialBodyCount: 6
@@ -155,7 +156,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.0013198853, y: 0.0000032186508}
+  m_Offset: {x: -0.0013198853, y: 0.029038608}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -165,7 +166,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.87580585, y: 0.8238313}
+  m_Size: {x: 0.7491064, y: 0.76576054}
   m_EdgeRadius: 0
 --- !u!50 &3684528285329596566
 Rigidbody2D:
