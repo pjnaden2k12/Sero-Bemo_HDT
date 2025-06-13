@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e23d853ed8cf61343bc843d42ee86d14, type: 3}
   m_Name: LevelDatabase
   m_EditorClassIdentifier: 
-  maps: []
+  maps:
+  - {fileID: 11400000, guid: 57101a9f19d36d240a2a676a621a5b2b, type: 2}

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4f03a8d66592ef478916b3ae57cd47f, type: 3}
   m_Name: Level1
   m_EditorClassIdentifier: 
-  level: 0
-  mapPrefab: {fileID: 0}
+  level: 1
+  mapPrefab: {fileID: 8676225871807759309, guid: fa0be1954e27a524a8a97c26c90ce688, type: 3}

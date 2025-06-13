@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Medicine
   - Banana
+  - ZoneSafe
   layers:
   - Default
   - TransparentFX
@@ -17,7 +18,7 @@ TagManager:
   - WormBodyLayer
   - NoMoveLayer
   - StopFly
-  - 
+  - ZoneSafe
   - 
   - 
   - 
@@ -64,7 +65,7 @@ TagManager:
   - name: Stone
     uniqueID: 4120970111
     locked: 0
-  - name: New Layer 8
+  - name: All_Item
     uniqueID: 763182507
     locked: 0
   m_RenderingLayers:
