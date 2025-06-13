@@ -1,14 +1,24 @@
-﻿using UnityEngine;
-using UnityEngine.InputSystem;
+﻿using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
-using DG.Tweening;
+using Unity.VisualScripting.Dependencies.Sqlite;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
 
 public class WormMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveStepX = 1.0f;
     public float moveStepY = 1.0f;
+    public List<string> moveSequence;
+
+    [Header("UI Buttons")]
+    public Button btnUp;
+    public Button btnDown;
+    public Button btnLeft;
+    public Button btnRight;
 
     [Header("Body Prefabs")]
     public GameObject bodyPrefab;
@@ -46,9 +56,12 @@ public class WormMovement : MonoBehaviour
     [Header("Layer Masks")]
     public LayerMask NoMoveLayer;
     public LayerMask WormBodyLayer;
-    //public LayerMask fallMapLayer;
 
-    // Internal states
+    public void OnMoveUpButton() => TrySetDirection(Direction.Up);
+    public void OnMoveDownButton() => TrySetDirection(Direction.Down);
+    public void OnMoveLeftButton() => TrySetDirection(Direction.Left);
+    public void OnMoveRightButton() => TrySetDirection(Direction.Right);
+
     private bool canMove = true;
     private bool isReversed = false;
 
@@ -67,7 +80,7 @@ public class WormMovement : MonoBehaviour
     {
         currentDirection = Direction.Down;
         movementDirection = Vector3.down;
-
+        StartCoroutine( SetUpWorm());
         Vector3 lastPos = transform.position;
 
         positionHistory.Add(lastPos);
@@ -96,6 +109,40 @@ public class WormMovement : MonoBehaviour
         mouthRenderer.enabled = false;
         rainbowRenderer.enabled = false;
         headFaceRenderer.sprite = faceNormal;
+
+        btnUp = GameObject.Find("UpBt").GetComponent<Button>();
+        btnDown = GameObject.Find("DownBt").GetComponent<Button>();
+        btnRight = GameObject.Find("RightBt").GetComponent<Button>();
+        btnLeft = GameObject.Find("LeftBt").GetComponent<Button>();
+
+        btnUp.onClick.AddListener(OnMoveUpButton);
+        btnDown.onClick.AddListener(OnMoveDownButton);
+        btnLeft.onClick.AddListener(OnMoveLeftButton);
+        btnRight.onClick.AddListener(OnMoveRightButton);
+
+    }
+
+    IEnumerator SetUpWorm()
+    {
+        // Scale tất cả phần của worm về 0 để ẩn đi
+        transform.localScale = Vector3.zero;
+        foreach (Transform part in bodyParts)
+            part.localScale = Vector3.zero;
+
+        // Di chuyển theo moveSequence
+        foreach (var dir in moveSequence)
+        {
+            yield return ForceMoveOneStep(dir);
+            yield return new WaitForSeconds(0.001f);
+        }
+
+        // Sau khi xong, scale lên bằng hiệu ứng
+        float duration = 1f;
+        transform.DOScale(Vector3.one, duration).SetEase(Ease.OutBack);
+        foreach (Transform part in bodyParts)
+        {
+            part.DOScale(Vector3.one, duration).SetEase(Ease.OutBack);
+        }
     }
 
     void Update()
@@ -251,8 +298,111 @@ public class WormMovement : MonoBehaviour
                 }
             }
             UpdateTailRotation();
+            CheckLoseIfAllInZoneSafe();
             StartCoroutine(MoveDelay());
         }
+    }
+    void TrySetDirection(Direction newDir)
+    {
+        if (!canMove || isReversed) return;
+
+        // Không cho quay ngược 180 độ
+        if ((currentDirection == Direction.Up && newDir == Direction.Down) ||
+            (currentDirection == Direction.Down && newDir == Direction.Up) ||
+            (currentDirection == Direction.Left && newDir == Direction.Right) ||
+            (currentDirection == Direction.Right && newDir == Direction.Left))
+        {
+            return;
+        }
+
+        movementDirection = GetMovementStep(newDir).normalized;
+
+        Vector3 step = GetMovementStep(newDir);
+        float rotationZ = 0f;
+        switch (newDir)
+        {
+            case Direction.Up: rotationZ = 180f; break;
+            case Direction.Down: rotationZ = 0f; break;
+            case Direction.Left: rotationZ = 270f; break;
+            case Direction.Right: rotationZ = 90f; break;
+        }
+
+        // Tương tự xử lý như trong Update()
+        StartCoroutine(MoveByInput(step, newDir, rotationZ));
+    }
+    IEnumerator MoveByInput(Vector3 step, Direction newDir, float rotationZ)
+    {
+        Vector3 nextPos = transform.position + step;
+
+        Collider2D obstacle = Physics2D.OverlapCircle(nextPos, 0.1f, NoMoveLayer);
+        if (obstacle != null && obstacle.gameObject.layer != LayerMask.NameToLayer("WormBodyLayer"))
+            yield break;
+
+        Collider2D hitCollider = Physics2D.OverlapCircle(nextPos, 0.1f);
+        if (hitCollider != null)
+        {
+            PushableItem pushable = hitCollider.GetComponent<PushableItem>();
+            if (pushable != null)
+            {
+                bool pushed = pushable.TryPush(step);
+                if (!pushed)
+                {
+                    if (pushable.CompareTag(tagBanana))
+                    {
+                        pushable.GetComponent<Banana>().Eat();
+                        GrowBody();
+                        StartCoroutine(SetFaceTemporary(faceHappy, 1.5f));
+                    }
+                    else if (pushable.CompareTag(tagMedicine))
+                    {
+                        pushable.GetComponent<Medicine>().Eat();
+                        StartCoroutine(HandleEatMedicine(movementDirection));
+                    }
+                    else
+                        yield break;
+                }
+            }
+            else
+            {
+                Transform tail = bodyParts[bodyParts.Count - 1];
+                Vector3 tailNextPos = positionHistory[positionHistory.Count - 2];
+                if (hitCollider.transform != tail || nextPos == tailNextPos)
+                    yield break;
+            }
+        }
+
+        positionHistory.Insert(0, nextPos);
+        if (positionHistory.Count > bodyParts.Count + 1)
+            positionHistory.RemoveAt(positionHistory.Count - 1);
+
+        directionHistory.Insert(0, newDir);
+        if (directionHistory.Count > bodyParts.Count + 1)
+            directionHistory.RemoveAt(directionHistory.Count - 1);
+
+        transform.position = nextPos;
+        transform.rotation = Quaternion.Euler(0f, 0f, rotationZ);
+        currentDirection = newDir;
+
+        SpawnSmokeAtTail();
+
+        for (int i = 0; i < bodyParts.Count; i++)
+        {
+            int historyIndex = i + 1;
+            if (historyIndex < positionHistory.Count)
+            {
+                bodyParts[i].position = positionHistory[historyIndex];
+                if (i < bodyParts.Count - 1 && i + 1 < directionHistory.Count)
+                {
+                    Direction from = directionHistory[i + 1];
+                    Direction to = directionHistory[i];
+                    SpriteRenderer sr = bodyParts[i].GetComponent<SpriteRenderer>();
+                    if (sr) sr.sprite = GetBodySprite(from, to);
+                }
+            }
+        }
+
+        UpdateTailRotation();
+        yield return StartCoroutine(MoveDelay());
     }
 
     void SpawnSmokeAtTail()
@@ -487,6 +637,86 @@ public class WormMovement : MonoBehaviour
         rainbowRenderer.enabled = true;
 
         TriggerReverseMovement(currentMoveDir);
+    }
+    public IEnumerator ForceMoveOneStep(string dir)
+    {
+        Direction newDir = currentDirection;
+        Vector3 step = Vector3.zero;
+        float rotationZ = 0f;
+
+        switch (dir)
+        {
+            case "Up": newDir = Direction.Up; step = Vector3.up * moveStepY; rotationZ = 180f; break;
+            case "Down": newDir = Direction.Down; step = Vector3.down * moveStepY; rotationZ = 0f; break;
+            case "Left": newDir = Direction.Left; step = Vector3.left * moveStepX; rotationZ = 270f; break;
+            case "Right": newDir = Direction.Right; step = Vector3.right * moveStepX; rotationZ = 90f; break;
+        }
+
+        Vector3 nextPos = transform.position + step;
+
+        // Di chuyển đầu
+        positionHistory.Insert(0, nextPos);
+        if (positionHistory.Count > bodyParts.Count + 1)
+            positionHistory.RemoveAt(positionHistory.Count - 1);
+
+        directionHistory.Insert(0, newDir);
+        if (directionHistory.Count > bodyParts.Count + 1)
+            directionHistory.RemoveAt(directionHistory.Count - 1);
+
+        transform.position = nextPos;
+        transform.rotation = Quaternion.Euler(0f, 0f, rotationZ);
+        currentDirection = newDir;      
+
+        // Di chuyển phần thân
+        for (int i = 0; i < bodyParts.Count; i++)
+        {
+            int historyIndex = i + 1;
+            if (historyIndex < positionHistory.Count)
+            {
+                bodyParts[i].position = positionHistory[historyIndex];
+
+                if (i < bodyParts.Count - 1 && i + 1 < directionHistory.Count)
+                {
+                    Direction from = directionHistory[i + 1];
+                    Direction to = directionHistory[i];
+                    SpriteRenderer sr = bodyParts[i].GetComponent<SpriteRenderer>();
+                    if (sr) sr.sprite = GetBodySprite(from, to);
+                }
+            }
+        }
+
+        UpdateTailRotation();
+        yield return null;
+    }
+    void CheckLoseIfAllInZoneSafe()
+    {
+        int totalInZoneSafe = 0;
+
+        foreach (Transform part in bodyParts)
+        {
+            Collider2D[] hits = Physics2D.OverlapCircleAll(part.position, 0.05f);
+            bool isInZoneSafe = false;
+
+            foreach (var hit in hits)
+            {
+                if (hit.CompareTag("ZoneSafe"))
+                {
+                    isInZoneSafe = true;
+                    break;
+                }
+            }
+
+            if (isInZoneSafe)
+            {
+                totalInZoneSafe++;
+            }
+        }
+
+        if (totalInZoneSafe == bodyParts.Count)
+        {
+            Debug.LogWarning("LOSE: All worm parts are in ZoneSafe!");
+            // TODO: Call LoseGame()
+        }
     }
 
 }

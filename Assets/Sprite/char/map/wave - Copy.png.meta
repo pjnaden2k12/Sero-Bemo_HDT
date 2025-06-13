@@ -1,10 +1,22 @@
 fileFormatVersion: 2
-guid: 1bca51e9f1435a5428b84be34f3ac2fd
+guid: b8bca90754dc62f4eb774309c6c9c5bf
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8382437546397126648
-    second: bt replay_0
+      213: 7343964130428245380
+    second: wave - Copy_0
+  - first:
+      213: -2478567030634704056
+    second: wave - Copy_1
+  - first:
+      213: -141541941980582714
+    second: wave - Copy_2
+  - first:
+      213: -3664488628254707269
+    second: wave - Copy_3
+  - first:
+      213: -5580320904360931297
+    second: wave - Copy_4
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -139,13 +151,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: bt replay_0
+      name: wave - Copy_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 299
-        height: 299
+        x: 80
+        y: 86
+        width: 8
+        height: 8
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -154,8 +166,96 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8ffc5e05986645470800000000000000
-      internalID: 8382437546397126648
+      spriteID: 485d26577700be560800000000000000
+      internalID: 7343964130428245380
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wave - Copy_1
+      rect:
+        serializedVersion: 2
+        x: 190
+        y: 91
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 843160bea6c5a9dd0800000000000000
+      internalID: -2478567030634704056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wave - Copy_2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 227
+        height: 83
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ccad6b8a54290ef0800000000000000
+      internalID: -141541941980582714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wave - Copy_3
+      rect:
+        serializedVersion: 2
+        x: 161
+        y: 80
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb17b65020f152dc0800000000000000
+      internalID: -3664488628254707269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wave - Copy_4
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 62
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f1051ea04b7be82b0800000000000000
+      internalID: -5580320904360931297
       vertices: []
       indices: 
       edges: []
@@ -174,7 +274,11 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      bt replay_0: 8382437546397126648
+      wave - Copy_0: 7343964130428245380
+      wave - Copy_1: -2478567030634704056
+      wave - Copy_2: -141541941980582714
+      wave - Copy_3: -3664488628254707269
+      wave - Copy_4: -5580320904360931297
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

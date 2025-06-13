@@ -220,11 +220,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3184383002426784309, guid: 1230cf5c882218d41812be4719d88cf1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.01
+      value: -4.61
       objectReference: {fileID: 0}
     - target: {fileID: 3184383002426784309, guid: 1230cf5c882218d41812be4719d88cf1, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0
+      value: -2.3
       objectReference: {fileID: 0}
     - target: {fileID: 3184383002426784309, guid: 1230cf5c882218d41812be4719d88cf1, type: 3}
       propertyPath: m_LocalPosition.z
@@ -335,6 +335,10 @@ PrefabInstance:
       value: 0.0013661981
       objectReference: {fileID: 0}
     - target: {fileID: 6455977875009766355, guid: 1230cf5c882218d41812be4719d88cf1, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6455977875009766355, guid: 1230cf5c882218d41812be4719d88cf1, type: 3}
       propertyPath: m_SpriteTilingProperty.newSize.x
       value: 1.0111111
       objectReference: {fileID: 0}
@@ -429,19 +433,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveStepX: 1
   moveStepY: 0.8
-  smokeEffectPrefab: {fileID: 55002674737628346, guid: e73f93527b4c8464fa240ca0759af362, type: 3}
+  moveSequence:
+  - Down
+  - Right
+  - Right
+  - Right
+  btnUp: {fileID: 0}
+  btnDown: {fileID: 0}
+  btnLeft: {fileID: 0}
+  btnRight: {fileID: 0}
   bodyPrefab: {fileID: 2104995442288989565, guid: d15b87d68706deb4898c0665951a5101, type: 3}
   tailPrefab: {fileID: 8398028049411720518, guid: e65b12b775425004bb75aaa3e2778a71, type: 3}
-  initialBodyCount: 1
-  NoMoveLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  WormBodyLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  fallMapLayer:
-    serializedVersion: 2
-    m_Bits: 0
+  initialBodyCount: 2
+  smokeEffectPrefab: {fileID: 55002674737628346, guid: e73f93527b4c8464fa240ca0759af362, type: 3}
   cornerTopRight: {fileID: 21300000, guid: fac3f154e4487294ca1c4f73ef893379, type: 3}
   cornerTopLeft: {fileID: 21300000, guid: 6fdddf8af4596e14f9075e1a956e6426, type: 3}
   cornerBottomLeft: {fileID: 21300000, guid: f0660abea68c16149ba70f47971b072a, type: 3}
@@ -454,9 +458,17 @@ MonoBehaviour:
   faceNormal: {fileID: 21300000, guid: 3ddabb9cdae36d446b8ca297c46d357c, type: 3}
   faceHappy: {fileID: 21300000, guid: 2435cb2e366c1e549aa4002d6f375c63, type: 3}
   faceEatMedicine: {fileID: 21300000, guid: 87794077a45e45e448631cff79340726, type: 3}
+  faceEatMedicinev2: {fileID: 21300000, guid: c24e31a6e58a7864aa64b70530e45d82, type: 3}
   faceFallEat: {fileID: 21300000, guid: 058d38176b5736545a8b65053f62cb95, type: 3}
+  faceFallEatv2: {fileID: 21300000, guid: e0737aac76049c24a8b65e67c5ef55c5, type: 3}
   tagBanana: Banana
   tagMedicine: Medicine
+  NoMoveLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  WormBodyLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!4 &8240921803386039490 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3184383002426784309, guid: 1230cf5c882218d41812be4719d88cf1, type: 3}
