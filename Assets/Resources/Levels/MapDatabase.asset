@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e23d853ed8cf61343bc843d42ee86d14, type: 3}
+  m_Name: MapDatabase
+  m_EditorClassIdentifier: 
+  maps:
+  - level: 1
+    mapPrefab: {fileID: 8676225871807759309, guid: fa0be1954e27a524a8a97c26c90ce688, type: 3}
+    initialBodyCount: 1
+    moveSequence:
+    - Down
+    - Right
+    - Right
+  - level: 2
+    mapPrefab: {fileID: 8676225871807759309, guid: 250ed104aee325d48a30ed2a51612a48, type: 3}
+    initialBodyCount: 1
+    moveSequence:
+    - Down
+    - Down
+    - Down
+  - level: 0
+    mapPrefab: {fileID: 0}
+    initialBodyCount: 0
+    moveSequence: []

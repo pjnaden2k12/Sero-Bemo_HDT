@@ -3,15 +3,9 @@ using DG.Tweening;
 
 public class Banana : PushableItem
 {
-    
-    
-
     public void Eat()
-    {
-        
+    {       
         KillTweens();
-
-        
-        Destroy(gameObject);
+        gameObject.SetActive(false);
     }
 }

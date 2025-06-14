@@ -6,6 +6,6 @@ public class Medicine : PushableItem
     public void Eat()
     {
         KillTweens();
-        Destroy(gameObject);
+        gameObject.SetActive(false);
     }
 }

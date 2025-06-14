@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-[CreateAssetMenu(fileName = "MapDatabase", menuName = "Game/MapDatabase", order = 2)]
+[CreateAssetMenu(fileName = "MapDatabase", menuName = "Game/MapDatabase")]
 public class MapDatabase : ScriptableObject
 {
     public List<MapData> maps;
@@ -13,8 +13,16 @@ public class MapDatabase : ScriptableObject
             if (map.level == level)
                 return map.mapPrefab;
         }
+        return null;
+    }
 
-        Debug.LogWarning("Không tìm thấy map cho level " + level);
+    public MapData GetMapDataByLevel(int level)
+    {
+        foreach (var map in maps)
+        {
+            if (map.level == level)
+                return map;
+        }
         return null;
     }
 }

@@ -11,11 +11,9 @@ public class WormController : MonoBehaviour
     public float moveStepY = 1.0f;
     public List<string> moveSequence;
 
-    [Header("UI Buttons")]
-    public Button btnUp;
-    public Button btnDown;
-    public Button btnLeft;
-    public Button btnRight;
+    [Header("UI & Level Manager")]
+    public UIManager uiManager;
+    public LevelManager levelManager;
 
     [Header("Body Prefabs")]
     public GameObject bodyPrefab;
@@ -76,7 +74,12 @@ public class WormController : MonoBehaviour
     private Coroutine safeZoneChecker;
 
     private enum Direction { Up, Down, Left, Right }
-
+    public void SetupLevelData(int count, List<string> sequence)
+    {
+        initialBodyCount = count;
+        moveSequence = sequence;
+        Debug.Log($"Setup Worm: BodyCount={count}, Moves={string.Join(",", sequence)}");
+    }
     void Start()
     {
         if (holeRenderer != null && holeClose != null)
@@ -114,19 +117,38 @@ public class WormController : MonoBehaviour
         rainbowRenderer.enabled = false;
         headFaceRenderer.sprite = faceNormal;
         // Button setup
-        if (btnUp == null) btnUp = GameObject.Find("UpBt")?.GetComponent<Button>();
-        if (btnDown == null) btnDown = GameObject.Find("DownBt")?.GetComponent<Button>();
-        if (btnLeft == null) btnLeft = GameObject.Find("LeftBt")?.GetComponent<Button>();
-        if (btnRight == null) btnRight = GameObject.Find("RightBt")?.GetComponent<Button>();
+        if (uiManager == null)
+            uiManager = FindFirstObjectByType<UIManager>();
 
-        if (btnUp != null) btnUp.onClick.AddListener(() => TrySetDirection(Direction.Up));
-        if (btnDown != null) btnDown.onClick.AddListener(() => TrySetDirection(Direction.Down));
-        if (btnLeft != null) btnLeft.onClick.AddListener(() => TrySetDirection(Direction.Left));
-        if (btnRight != null) btnRight.onClick.AddListener(() => TrySetDirection(Direction.Right));
-
-
+        if (uiManager != null)
+        {
+            uiManager.OnDirectionButtonPressed += HandleDirectionInput;
+        }
+        if (levelManager != null) 
+            levelManager = FindFirstObjectByType<LevelManager>();
         
+
         StartCoroutine(SetUpWorm());
+    }
+    void HandleDirectionInput(string direction)
+    {
+        Direction newDir = direction switch
+        {
+            "Up" => Direction.Up,
+            "Down" => Direction.Down,
+            "Left" => Direction.Left,
+            "Right" => Direction.Right,
+            _ => currentDirection
+        };
+
+        TrySetDirection(newDir);
+    }
+    void OnDestroy()
+    {
+        if (uiManager != null)
+        {
+            uiManager.OnDirectionButtonPressed -= HandleDirectionInput;
+        }
     }
     void OnTriggerEnter2D(Collider2D other)
     {
@@ -137,7 +159,7 @@ public class WormController : MonoBehaviour
             SpriteRenderer sr = other.GetComponent<SpriteRenderer>();
             if (sr != null && sr.sprite == holeOpen)
             {
-                Debug.Log("🐛 Worm touching open hole!");
+                Debug.Log("Worm touching open hole!");
                 StartCoroutine(WormEnterHole(other.transform.position));
             }
         }
@@ -154,7 +176,7 @@ public class WormController : MonoBehaviour
         foreach (Transform part in bodyParts)
             part.DOScale(Vector3.zero, duration).SetEase(Ease.InQuad);
 
-        SpawnSmokeAtTail(); // hiệu ứng khói
+        SpawnSmokeAtTail();
 
         yield return new WaitForSeconds(duration);
 
@@ -239,7 +261,7 @@ public class WormController : MonoBehaviour
                         med.Eat();
                         StartCoroutine(HandleEatMedicine(movementDirection));
                         StartCoroutine(DelayedCheckWin());
-                        StartCoroutine(DelayedCheckWin());
+                       
 
                     }
                 }
@@ -394,7 +416,7 @@ public class WormController : MonoBehaviour
                 {
                     Debug.Log("Worm flew out of camera view");
                     StopReverseMovement();
-                    LoseGame();
+                    StartCoroutine( LoseGame());
                     return;
                 }
 
@@ -600,7 +622,7 @@ public class WormController : MonoBehaviour
             {
                 headFaceRenderer.sprite = faceDrop;
                 Debug.Log("Thua vì GIUN ra khỏi A hoặc toàn bộ giun vào B");
-                LoseGame();
+                StartCoroutine( LoseGame());
                 yield break;
             }
 
@@ -613,7 +635,7 @@ public class WormController : MonoBehaviour
                     StartCoroutine(SetFallingFace());
 
                     Debug.Log("Thua vì BANANA ra khỏi A hoặc vào hết B");
-                    LoseGame();
+                    StartCoroutine(LoseGame());
                     yield break;
                 }
             }
@@ -627,7 +649,7 @@ public class WormController : MonoBehaviour
                     StartCoroutine(SetFallingFace());
 
                     Debug.Log("Thua vì MEDICINE ra khỏi A hoặc vào hết B");
-                    LoseGame();
+                    StartCoroutine(LoseGame());
                     yield break;
                 }
             }
@@ -651,24 +673,99 @@ public class WormController : MonoBehaviour
                 holeRenderer.sprite = holeOpen;
             }
 
-            WinGame(); // gọi win game nếu bạn muốn làm thêm
         }
     }
 
-    void LoseGame()
+    IEnumerator LoseGame()
     {
+        VanishWorm();
+        yield return new WaitForSeconds(1.5f);
+        if (uiManager != null)
+        {
+            uiManager.ShowLoseUI();
+        }
+
         Debug.Log("Game Over!");
-       
+        
     }
     void WinGame()
     {
-        Debug.Log("You Win!");
-        // TODO: Mở panel chiến thắng hoặc chuyển màn
+        levelManager.OnLevelCompleted();
+        StartCoroutine(HandleWinSequence());
     }
+
+    IEnumerator HandleWinSequence()
+    {
+        CloudScreenEffect cloud = FindFirstObjectByType<CloudScreenEffect>();
+
+        // Bắt đầu hiệu ứng mây vào
+        Coroutine enterCloud = null;
+        if (cloud != null)
+        {
+            enterCloud = StartCoroutine(cloud.EnterScreenEffect());
+        }
+
+        // Đợi 0.7s rồi chuyển level
+        yield return new WaitForSeconds(0.4f);
+        LevelManager levelManager = FindFirstObjectByType<LevelManager>();
+        if (levelManager != null)
+        {
+            levelManager.NextLevel();
+        }
+
+       
+
+        yield return new WaitForSeconds(1.5f);
+
+        if (cloud != null)
+        {
+            yield return cloud.ExitScreenEffect();
+        }
+    }
+
+
     IEnumerator DelayedCheckWin()
     {
-        yield return null; // chờ 1 frame để Destroy hoàn tất
+        yield return null; 
         CheckWinCondition();
+    }
+    public void VanishWorm()
+    {
+        StartCoroutine(VanishWormRoutine());        
+    }
+
+    IEnumerator VanishWormRoutine()
+    {
+        yield return new WaitForSeconds(1f);
+        GameObject worm = GameObject.Find("Worm");
+        if (worm != null)
+        {
+            float fadeDuration = 0f;
+            Instantiate(smokeEffectPrefab, worm.transform.position, Quaternion.identity);
+
+            SpriteRenderer[] renderers = worm.GetComponentsInChildren<SpriteRenderer>();
+
+            foreach (var sr in renderers)
+            {
+                sr.DOFade(0f, fadeDuration);
+            }
+
+        }
+
+        SpawnSmokeAt(transform.position);
+        foreach (Transform part in bodyParts)
+        {
+            SpawnSmokeAt(part.position);
+        }
+    }
+
+    void SpawnSmokeAt(Vector3 position)
+    {
+        if (smokeEffectPrefab != null)
+        {
+            GameObject smoke = Instantiate(smokeEffectPrefab, position, Quaternion.identity);
+            Destroy(smoke, 2f);
+        }
     }
 
 

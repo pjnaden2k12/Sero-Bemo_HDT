@@ -1,8 +1,11 @@
 using UnityEngine;
+using System.Collections.Generic;
 
-[CreateAssetMenu(fileName = "MapData", menuName = "Game/MapData", order = 1)]
-public class MapData : ScriptableObject
+[System.Serializable]
+public class MapData
 {
     public int level;
     public GameObject mapPrefab;
+    public int initialBodyCount;
+    public List<string> moveSequence;
 }
