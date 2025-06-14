@@ -47,6 +47,12 @@ public class WormController : MonoBehaviour
     public Sprite facefalleat;
     public Sprite facefalleatv2;
 
+    [Header("Hole Settings")]
+    public SpriteRenderer holeRenderer;
+    public Sprite holeOpen;
+    public Sprite holeClose;
+
+
     [Header("Tags")]
     public string tagBanana = "Banana";
     public string tagMedicine = "Medicine";
@@ -55,6 +61,7 @@ public class WormController : MonoBehaviour
     public LayerMask NoMoveLayer;
     public LayerMask interactableLayer;
 
+    private bool hasWon=false;
     private bool canMove = true;
     private bool isReversed = false;
     private Direction currentDirection;
@@ -72,6 +79,11 @@ public class WormController : MonoBehaviour
 
     void Start()
     {
+        if (holeRenderer != null && holeClose != null)
+        {
+            holeRenderer.sprite = holeClose;
+        }
+
         currentDirection = Direction.Down;
         movementDirection = Vector3.down;
 
@@ -115,6 +127,38 @@ public class WormController : MonoBehaviour
 
         
         StartCoroutine(SetUpWorm());
+    }
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!hasWon) return;
+
+        if (other.CompareTag("Hole"))
+        {
+            SpriteRenderer sr = other.GetComponent<SpriteRenderer>();
+            if (sr != null && sr.sprite == holeOpen)
+            {
+                Debug.Log("🐛 Worm touching open hole!");
+                StartCoroutine(WormEnterHole(other.transform.position));
+            }
+        }
+    }
+    IEnumerator WormEnterHole(Vector3 holePos)
+    {
+        canMove = false;
+
+        float duration = 0.6f;
+
+        transform.DOMove(holePos, duration).SetEase(Ease.InQuad);
+        transform.DOScale(Vector3.zero, duration).SetEase(Ease.InQuad);
+
+        foreach (Transform part in bodyParts)
+            part.DOScale(Vector3.zero, duration).SetEase(Ease.InQuad);
+
+        SpawnSmokeAtTail(); // hiệu ứng khói
+
+        yield return new WaitForSeconds(duration);
+
+        WinGame();
     }
 
     IEnumerator SetUpWorm()
@@ -185,6 +229,8 @@ public class WormController : MonoBehaviour
                         GrowBody();
                         StartCoroutine(SetFaceTemporary(faceHappy, 1.5f));
                         mouthRenderer.enabled = false;
+                        StartCoroutine(DelayedCheckWin());
+
                     }
 
                     Medicine med = item.GetComponent<Medicine>();
@@ -192,6 +238,9 @@ public class WormController : MonoBehaviour
                     {
                         med.Eat();
                         StartCoroutine(HandleEatMedicine(movementDirection));
+                        StartCoroutine(DelayedCheckWin());
+                        StartCoroutine(DelayedCheckWin());
+
                     }
                 }
             }
@@ -204,13 +253,18 @@ public class WormController : MonoBehaviour
     void CheckMouthTargetAhead()
     {
         Vector3 aheadPos = transform.position + movementDirection;
-        Collider2D hit = Physics2D.OverlapCircle(aheadPos, 1.5f, interactableLayer);
+        Collider2D hit = Physics2D.OverlapCircle(aheadPos, 0.9f, interactableLayer);
         if (hit != null)
         {
             if (hit.CompareTag(tagBanana) || hit.CompareTag(tagMedicine))
             {
-                mouthRenderer.enabled = true;
-                return;
+                Vector3 toTarget = (hit.transform.position - transform.position).normalized;
+                float dot = Vector3.Dot(toTarget, movementDirection.normalized);
+                if (dot > 0.9f)
+                {
+                    mouthRenderer.enabled = true;
+                    return;
+                }
             }
         }
 
@@ -295,6 +349,11 @@ public class WormController : MonoBehaviour
 
     public void TriggerReverseMovement(Vector3 currentMoveDir)
     {
+        if (safeZoneChecker != null)
+        {
+            StopCoroutine(safeZoneChecker);
+            safeZoneChecker = null;
+        }
         Transform wormRoot = transform.parent;
         if (flyTween != null && flyTween.IsActive()) flyTween.Kill();
 
@@ -315,9 +374,34 @@ public class WormController : MonoBehaviour
             .SetLoops(-1, LoopType.Incremental)
             .OnUpdate(() =>
             {
+                bool allOutOfView = true;
+
                 foreach (Transform part in wormRoot)
                 {
-                    Collider2D[] hits = Physics2D.OverlapCircleAll(part.position, 0.45f);
+                    Vector3 viewPos = Camera.main.WorldToViewportPoint(part.position);
+                    bool isVisible = viewPos.x >= 0 && viewPos.x <= 1 &&
+                                     viewPos.y >= 0 && viewPos.y <= 1 &&
+                                     viewPos.z > 0;
+
+                    if (isVisible)
+                    {
+                        allOutOfView = false;
+                        break;
+                    }
+                }
+
+                if (allOutOfView)
+                {
+                    Debug.Log("Worm flew out of camera view");
+                    StopReverseMovement();
+                    LoseGame();
+                    return;
+                }
+
+               
+                foreach (Transform part in wormRoot)
+                {
+                    Collider2D[] hits = Physics2D.OverlapCircleAll(part.position, 0.5f);
                     foreach (Collider2D hit in hits)
                     {
                         if (hit == null || hit.gameObject == gameObject) continue;
@@ -336,6 +420,7 @@ public class WormController : MonoBehaviour
                     }
                 }
             });
+        
     }
     void StartFlyingItem(Transform item, Vector3 direction)
     {
@@ -347,7 +432,7 @@ public class WormController : MonoBehaviour
             .SetLoops(-1, LoopType.Incremental)
             .OnUpdate(() =>
             {
-                Collider2D[] hits = Physics2D.OverlapCircleAll(item.position, 0.52f);
+                Collider2D[] hits = Physics2D.OverlapCircleAll(item.position, 0.54f);
                 foreach (var hit in hits)
                 {
                     if (hit == null || hit.gameObject == item.gameObject) continue;
@@ -364,6 +449,8 @@ public class WormController : MonoBehaviour
 
     void StopReverseMovement()
     {
+        if (safeZoneChecker == null)
+            safeZoneChecker = StartCoroutine(CheckWormOutsideSafeZoneRoutine());
         if (flyTween != null && flyTween.IsActive()) flyTween.Kill(true);
         foreach (Tween t in flyingItemTweens)
             if (t.IsActive()) t.Kill(true);
@@ -371,9 +458,8 @@ public class WormController : MonoBehaviour
         SpawnSmokeAtTail();
         UpdateHistoryAfterReverse();
         ResetFace();
-
         canMove = true;
-        isReversed = false;
+        isReversed = false;       
     }
     void UpdateHistoryAfterReverse()
     {
@@ -390,7 +476,6 @@ public class WormController : MonoBehaviour
             directionHistory.Add(DirectionFromVector(dir));
         }
 
-        // Lặp lại direction cuối để đủ chiều dài
         if (directionHistory.Count > 0)
             directionHistory.Add(directionHistory[directionHistory.Count - 1]);
     }
@@ -427,6 +512,13 @@ public class WormController : MonoBehaviour
         yield return new WaitForSeconds(duration);
         headFaceRenderer.sprite = faceNormal;
     }
+    IEnumerator SetFallingFace()
+    {
+        mouthRenderer.enabled=false;
+        headFaceRenderer.sprite = facefalleat;
+        yield return new WaitForSeconds(0.7f);
+        headFaceRenderer.sprite = facefalleatv2;
+    }
 
     Vector3 GetMovementStep(Direction dir)
     {
@@ -450,7 +542,7 @@ public class WormController : MonoBehaviour
         Vector3 direction = (beforeTail.position - tail.position).normalized;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
 
-        tail.rotation = Quaternion.Euler(0f, 0f, angle - 180f); // -90 để xoay đúng hướng sprite
+        tail.rotation = Quaternion.Euler(0f, 0f, angle - 180f); 
     }
 
 
@@ -499,66 +591,139 @@ public class WormController : MonoBehaviour
     }
     IEnumerator CheckWormOutsideSafeZoneRoutine()
     {
-      
         WaitForSeconds wait = new WaitForSeconds(0.1f);
 
         while (true)
         {
-            bool allOutsideA = true;  // giả sử tất cả ngoài A
-            bool allInsideB = true;   // giả sử tất cả trong B
-
-            List<Transform> allParts = new List<Transform>(bodyParts);
-            allParts.Insert(0, transform); // thêm đầu giun
-
-            foreach (Transform part in allParts)
+            // Kiểm tra giun
+            if (IsAllOutsideZone("SafeZoneA", GetAllWormParts()) || IsAllInsideZone("SafeZoneB", GetAllWormParts()))
             {
-                bool inA = false;
-                bool inB = false;
-                CheckTagsAtPosition(part.position, ref inA, ref inB);
+                headFaceRenderer.sprite = faceDrop;
+                Debug.Log("Thua vì GIUN ra khỏi A hoặc toàn bộ giun vào B");
+                LoseGame();
+                yield break;
+            }
 
-                if (inA) allOutsideA = false;  // phần này trong A → không phải toàn bộ ngoài A
-                if (!inB) allInsideB = false;  // phần này không trong B → không phải toàn bộ trong B
-
-                if (!allOutsideA && !allInsideB)
+            // Kiểm tra Banana
+            GameObject[] bananas = GameObject.FindGameObjectsWithTag(tagBanana);
+            if (bananas.Length > 0)
+            {
+                if (IsAllOutsideZone("SafeZoneA", bananas) || IsAllInsideZone("SafeZoneB", bananas))
                 {
-                    // Đã đủ điều kiện để tiếp tục, thoát vòng check sớm
-                    break;
+                    StartCoroutine(SetFallingFace());
+
+                    Debug.Log("Thua vì BANANA ra khỏi A hoặc vào hết B");
+                    LoseGame();
+                    yield break;
                 }
             }
 
-            if (allOutsideA || allInsideB)
+            // Kiểm tra Medicine
+            GameObject[] medicines = GameObject.FindGameObjectsWithTag(tagMedicine);
+            if (medicines.Length > 0)
             {
-                headFaceRenderer.sprite = faceDrop;
-                Debug.Log("Thua vì toàn bộ giun ra khỏi A hoặc toàn bộ giun vào B");
-                LoseGame();
-                yield break;
+                if (IsAllOutsideZone("SafeZoneA", medicines) || IsAllInsideZone("SafeZoneB", medicines))
+                {
+                    StartCoroutine(SetFallingFace());
+
+                    Debug.Log("Thua vì MEDICINE ra khỏi A hoặc vào hết B");
+                    LoseGame();
+                    yield break;
+                }
             }
 
             yield return wait;
         }
     }
 
-
-
-
-    void CheckTagsAtPosition(Vector3 pos, ref bool inA, ref bool inB)
+    void CheckWinCondition()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(pos, 0.1f);
-        foreach (var hit in hits)
-        {
-            if (hit == null) continue;
-            if (hit.CompareTag("SafeZoneA")) inA = true;
-            if (hit.CompareTag("SafeZoneB")) inB = true;
+        if (hasWon) return;
+        GameObject[] bananas = GameObject.FindGameObjectsWithTag(tagBanana);
+        GameObject[] medicines = GameObject.FindGameObjectsWithTag(tagMedicine);
 
-            if (inA && inB) break;
+        if (bananas.Length == 0 && medicines.Length == 0)
+        {
+            hasWon = true;
+            Debug.Log("WIN! Open the hole!");
+            if (holeRenderer != null && holeOpen != null)
+            {
+                holeRenderer.sprite = holeOpen;
+            }
+
+            WinGame(); // gọi win game nếu bạn muốn làm thêm
         }
     }
-
 
     void LoseGame()
     {
         Debug.Log("Game Over!");
        
+    }
+    void WinGame()
+    {
+        Debug.Log("You Win!");
+        // TODO: Mở panel chiến thắng hoặc chuyển màn
+    }
+    IEnumerator DelayedCheckWin()
+    {
+        yield return null; // chờ 1 frame để Destroy hoàn tất
+        CheckWinCondition();
+    }
+
+
+    List<Transform> GetAllWormParts()
+    {
+        List<Transform> allParts = new List<Transform>(bodyParts);
+        allParts.Insert(0, transform);
+        return allParts;
+    }
+
+    bool IsAllOutsideZone(string zoneTag, IEnumerable<Transform> parts)
+    {
+        foreach (var part in parts)
+        {
+            if (IsInsideZone(part.position, zoneTag)) return false;
+        }
+        return true;
+    }
+
+    bool IsAllOutsideZone(string zoneTag, GameObject[] objects)
+    {
+        foreach (var obj in objects)
+        {
+            if (IsInsideZone(obj.transform.position, zoneTag)) return false;
+        }
+        return true;
+    }
+
+    bool IsAllInsideZone(string zoneTag, IEnumerable<Transform> parts)
+    {
+        foreach (var part in parts)
+        {
+            if (!IsInsideZone(part.position, zoneTag)) return false;
+        }
+        return true;
+    }
+
+    bool IsAllInsideZone(string zoneTag, GameObject[] objects)
+    {
+        foreach (var obj in objects)
+        {
+            if (!IsInsideZone(obj.transform.position, zoneTag)) return false;
+        }
+        return true;
+    }
+
+    bool IsInsideZone(Vector3 position, string tag)
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(position, 0.1f);
+        foreach (var hit in hits)
+        {
+            if (hit != null && hit.CompareTag(tag))
+                return true;
+        }
+        return false;
     }
 
 }

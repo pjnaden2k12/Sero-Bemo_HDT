@@ -9,6 +9,8 @@ TagManager:
   - SafeZoneA
   - SafeZoneB
   - ZoneSafe
+  - Item
+  - Hole
   layers:
   - Default
   - TransparentFX
