@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Medicine
   - Banana
+  - SafeZoneA
+  - SafeZoneB
   - ZoneSafe
   layers:
   - Default
@@ -48,25 +50,10 @@ TagManager:
     uniqueID: 4136473863
     locked: 0
   - name: Player
-    uniqueID: 2505937929
-    locked: 0
-  - name: Banana
     uniqueID: 260286787
     locked: 0
-  - name: Decice
-    uniqueID: 3343195205
-    locked: 0
-  - name: Freeze
-    uniqueID: 110129019
-    locked: 0
-  - name: Wood
-    uniqueID: 741447579
-    locked: 0
-  - name: Stone
-    uniqueID: 4120970111
-    locked: 0
   - name: All_Item
-    uniqueID: 763182507
+    uniqueID: 2505937929
     locked: 0
   m_RenderingLayers:
   - Default
