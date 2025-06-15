@@ -1,4 +1,4 @@
-﻿using DG.Tweening;  // Import DOTween
+﻿using DG.Tweening;  
 using System;
 using System.Collections;
 using UnityEngine;
@@ -19,7 +19,8 @@ public class UIManager : MonoBehaviour
     public Button playBt;
     public Button guideBt;
     public Button exitBt;
-    
+
+    public GameObject level1EffectPanel;
 
     public GameObject groupMoveBt;
     public GameObject groupSettingBt;
@@ -95,13 +96,13 @@ public class UIManager : MonoBehaviour
 
         if (canvasGroup != null)
         {
-            // Đảm bảo rằng alpha được reset về 0 trước khi thực hiện fade-in
+            
             canvasGroup.alpha = 0f;
         }
 
-        guidePanel.SetActive(true);  // Bật guidePanel
+        guidePanel.SetActive(true); 
 
-        // Thực hiện hiệu ứng fade-in
+        
         canvasGroup?.DOFade(1f, 0.5f);
     }
 
@@ -122,6 +123,7 @@ public class UIManager : MonoBehaviour
 
     public void ShowHomePanel()
     {
+        level1EffectPanel.SetActive(false);
         guideBt?.gameObject.SetActive(false );
         playBt?.gameObject.SetActive(false );
         homePanel?.SetActive(true);
@@ -139,23 +141,22 @@ public class UIManager : MonoBehaviour
 
     private IEnumerator ShowUIElementsWithDelay()
     {
-        // Hiển thị logo trượt từ trên xuống
+        
         logo?.SetActive(true);
         RectTransform logoRect = logo.GetComponent<RectTransform>();
-        logoRect.anchoredPosition = new Vector2(logoRect.anchoredPosition.x, 1500);  // Đặt logo ở trên ngoài màn hình
-        logoRect.DOAnchorPosY(0, 1.5f, false);  // Trượt logo từ trên xuống trong 1 giây
-        yield return new WaitForSeconds(1f);  // Chờ logo trượt xuống xong
+        logoRect.anchoredPosition = new Vector2(logoRect.anchoredPosition.x, 1500);  
+        logoRect.DOAnchorPosY(0, 1.5f, false);  
+        yield return new WaitForSeconds(1f);  
 
-        // Hiển thị playBt với hiệu ứng scale-up
+        
         playBt?.gameObject.SetActive(true);
-        playBt.transform.localScale = Vector3.zero;  // Đặt kích thước ban đầu là 0
-        playBt.transform.DOScale(Vector3.one, 0.8f);  // Scale-up từ 0 đến 1 trong 0.5 giây
-        yield return new WaitForSeconds(0.8f);  // Chờ playBt xuất hiện
+        playBt.transform.localScale = Vector3.zero;  
+        playBt.transform.DOScale(Vector3.one, 0.8f);  
+        yield return new WaitForSeconds(0.8f);  
 
-        // Hiển thị guideBt với hiệu ứng fade-in
         guideBt?.gameObject.SetActive(true);
-        guideBt.transform.localScale = Vector3.zero;  // Đặt kích thước ban đầu là 0
-       guideBt.transform.DOScale(Vector3.one, 0.8f);  // Fade-in guideBt trong 0.5 giây
+        guideBt.transform.localScale = Vector3.zero;  
+       guideBt.transform.DOScale(Vector3.one, 0.8f);  
     }
 
     private void ResetScale(GameObject obj)
@@ -273,5 +274,46 @@ public class UIManager : MonoBehaviour
             audioSource.PlayOneShot(clip);
         }
     }
+    public void ShowLevel1EffectPanelWithEffect()
+    {
+        groupMoveBt?.SetActive(false);
+        groupSettingBt?.SetActive(false);
+        groupLoseBt?.SetActive(false);
+        if (level1EffectPanel == null) return;
+
+        level1EffectPanel.SetActive(true);
+
+        
+        CanvasGroup canvasGroup = level1EffectPanel.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = level1EffectPanel.AddComponent<CanvasGroup>();
+        }
+
+        canvasGroup.alpha = 1f;
+
+        canvasGroup.DOFade(0.2f, 0.5f)
+            .SetLoops(-1, LoopType.Yoyo)
+            .SetId("Level1Blink");
+    }
+
+
+
+    public void HideLevel1EffectPanel()
+    {
+        if (level1EffectPanel == null) return;
+
+        DOTween.Kill("Level1Blink"); 
+
+        CanvasGroup canvasGroup = level1EffectPanel.GetComponent<CanvasGroup>();
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+        }
+
+        level1EffectPanel.transform.localScale = Vector3.one;
+        level1EffectPanel.SetActive(false);
+    }
+
 
 }

@@ -40,11 +40,14 @@ public class LevelManager : MonoBehaviour
 
     public void LoadLevel(int level)
     {
-        StartCoroutine(LoadLevelRoutine(level));
+        if (!isLoadingLevel)
+            StartCoroutine(LoadLevelRoutine(level));
     }
 
     private IEnumerator LoadLevelRoutine(int level)
     {
+        isLoadingLevel = true;
+
         if (cloudEffect != null)
             yield return cloudEffect.EnterScreenEffect();
 
@@ -71,7 +74,9 @@ public class LevelManager : MonoBehaviour
             yield return cloudEffect.ExitScreenEffect();
 
         currentLevel = level;
+        isLoadingLevel = false; 
     }
+
 
     private void OnPlayPressed()
     {
@@ -181,4 +186,6 @@ public class LevelManager : MonoBehaviour
         currentLevel = 1;
         SaveLevelProgress();
     }
+    private bool isLoadingLevel = false;
+
 }

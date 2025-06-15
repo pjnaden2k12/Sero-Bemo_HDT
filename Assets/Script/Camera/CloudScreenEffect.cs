@@ -10,7 +10,7 @@ public class CloudScreenEffect : MonoBehaviour
     public RectTransform rightCloud;
 
     [Header("Target Positions (Near Center)")]
-    public float offsetFromCenter = 150f; // khoảng cách từ tâm ra ngoài
+    public float offsetFromCenter = 150f;
 
     [Header("Move Settings")]
     public float moveDuration = 0.6f;
@@ -23,11 +23,11 @@ public class CloudScreenEffect : MonoBehaviour
 
     void Awake()
     {
-        // Lưu lại vị trí gốc
+      
         leftStartPos = leftCloud.anchoredPosition;
         rightStartPos = rightCloud.anchoredPosition;
 
-        // Tính vị trí target gần giữa
+      
         float centerX = 0f;
         leftTargetPos = new Vector2(centerX - offsetFromCenter, leftStartPos.y);
         rightTargetPos = new Vector2(centerX + offsetFromCenter, rightStartPos.y);

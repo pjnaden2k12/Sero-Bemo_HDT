@@ -8,8 +8,8 @@ public class PushableItem : MonoBehaviour
 
     public float moveDuration = 0.1f;
 
-    public Transform visualTransform;   // Visual lơ lửng
-    public Transform shadowTransform;   // Shadow co giãn
+    public Transform visualTransform;   
+    public Transform shadowTransform;  
 
     private float floatHeight = 0.2f;
     private float floatDuration = 1f;

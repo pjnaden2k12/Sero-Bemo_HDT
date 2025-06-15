@@ -83,6 +83,7 @@ public class WormController : MonoBehaviour
 
     public AudioClip eatFoodSound;
     public AudioClip FallFoodSound;
+    public AudioClip FlySound;
     private AudioSource audioSource;
 
     void Start()
@@ -532,6 +533,7 @@ public class WormController : MonoBehaviour
 
     void StopReverseMovement()
     {
+        
         if (safeZoneChecker == null)
             safeZoneChecker = StartCoroutine(CheckWormOutsideSafeZoneRoutine());
         if (flyTween != null && flyTween.IsActive()) flyTween.Kill(true);
@@ -759,17 +761,32 @@ public class WormController : MonoBehaviour
     IEnumerator LoseGame()
     {
         canMove = false;
-        if (FallFoodSound != null)
-            audioSource.PlayOneShot(FallFoodSound);
+
         yield return new WaitForSeconds(1.5f);
-        if (uiManager != null)
+
+        if (levelManager.GetCurrentLevel() == 1)
         {
+            
+            uiManager.ShowLevel1EffectPanelWithEffect();
+
+            
+            yield return new WaitForSeconds(5f);
+
+            uiManager.HideLevel1EffectPanel();
+
+            levelManager.OnLevelCompleted();
+        }
+        else
+        {
+            if (FallFoodSound != null)
+                audioSource.PlayOneShot(FallFoodSound);
+
             uiManager.ShowLoseUI();
         }
 
         Debug.Log("Game Over!");
-
     }
+
     void WinGame()
     {
         levelManager.OnLevelCompleted();
