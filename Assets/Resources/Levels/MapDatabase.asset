@@ -49,3 +49,22 @@ MonoBehaviour:
     - Up
     - Up
     - Left
+  - level: 5
+    mapPrefab: {fileID: 8676225871807759309, guid: 8943f0c49734e0547a4ac5fdebd3af45, type: 3}
+    initialBodyCount: 1
+    moveSequence:
+    - Down
+    - Down
+    - Left
+    - Up
+    - Up
+  - level: 5
+    mapPrefab: {fileID: 8676225871807759309, guid: 8943f0c49734e0547a4ac5fdebd3af45, type: 3}
+    initialBodyCount: 1
+    moveSequence:
+    - Down
+    - Right
+    - Up
+    - Up
+    - Up
+    - Left

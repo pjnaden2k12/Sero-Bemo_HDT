@@ -80,8 +80,17 @@ public class WormController : MonoBehaviour
         moveSequence = sequence;
         Debug.Log($"Setup Worm: BodyCount={count}, Moves={string.Join(",", sequence)}");
     }
+
+    public AudioClip eatFoodSound;
+    public AudioClip FallFoodSound;
+    private AudioSource audioSource;
+
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+
         if (holeRenderer != null && holeClose != null)
         {
             holeRenderer.sprite = holeClose;
@@ -208,12 +217,18 @@ public class WormController : MonoBehaviour
     void TrySetDirection(Direction newDir)
     {
         if (!canMove || isReversed) return;
+        if (IsHeadCollidingInDirection(newDir))
+        {
+            
+            return;
+        }
+     
         if ((currentDirection == Direction.Up && newDir == Direction.Down) ||
             (currentDirection == Direction.Down && newDir == Direction.Up) ||
             (currentDirection == Direction.Left && newDir == Direction.Right) ||
             (currentDirection == Direction.Right && newDir == Direction.Left))
             return;
-
+       
         movementDirection = GetMovementStep(newDir).normalized;
         float rotationZ = newDir switch
         {
@@ -247,8 +262,10 @@ public class WormController : MonoBehaviour
                     Banana banana = item.GetComponent<Banana>();
                     if (banana != null)
                     {
+                        if (eatFoodSound != null) audioSource.PlayOneShot(eatFoodSound);
                         banana.Eat();
                         GrowBody();
+                        
                         StartCoroutine(SetFaceTemporary(faceHappy, 1.5f));
                         mouthRenderer.enabled = false;
                         StartCoroutine(DelayedCheckWin());
@@ -258,6 +275,8 @@ public class WormController : MonoBehaviour
                     Medicine med = item.GetComponent<Medicine>();
                     if (med != null)
                     {
+                        if (eatFoodSound != null) audioSource.PlayOneShot(eatFoodSound);
+
                         med.Eat();
                         StartCoroutine(HandleEatMedicine(movementDirection));
                         StartCoroutine(DelayedCheckWin());
@@ -386,7 +405,7 @@ public class WormController : MonoBehaviour
         canMove = false;
         isReversed = true;
 
-        Vector3 moveDir = currentMoveDir.normalized * -1f;  // Di chuyển ngược lại
+        Vector3 moveDir = currentMoveDir.normalized * -1f;  
 
         flyTween = DOTween.To(() => wormRoot.position,
             x => wormRoot.position = x,
@@ -420,7 +439,7 @@ public class WormController : MonoBehaviour
                     return;
                 }
 
-                // Kiểm tra va chạm chỉ với đối tượng phía sau
+                
                 foreach (Transform part in wormRoot)
                 {
                     Collider2D[] hits = Physics2D.OverlapCircleAll(part.position, 0.55f);
@@ -428,12 +447,11 @@ public class WormController : MonoBehaviour
                     {
                         if (hit == null || hit.gameObject == gameObject) continue;
 
-                        // Tính góc giữa hướng di chuyển và đối tượng bị va chạm
                         Vector3 dirToHit = hit.transform.position - part.position;
                         float angle = Vector3.Angle(dirToHit, moveDir);
 
-                        // Nếu đối tượng ở phía sau (góc nhỏ), kiểm tra lớp va chạm
-                        if (angle < 90f)  // Chỉ xét những đối tượng trong phạm vi 90 độ phía sau
+                        
+                        if (angle < 90f) 
                         {
                             if (((1 << hit.gameObject.layer) & NoMoveLayer) != 0)
                             {
@@ -453,7 +471,7 @@ public class WormController : MonoBehaviour
     }
     void StartFlyingItem(Transform item, Vector3 direction)
     {
-        // Danh sách lưu các item đang được đẩy
+        
         List<Transform> itemsToPush = new List<Transform> { item };
 
         Tween itemTween = DOTween.To(() => item.position,
@@ -470,37 +488,37 @@ public class WormController : MonoBehaviour
                 {
                     if (hit == null || hit.gameObject == item.gameObject) continue;
 
-                    // Kiểm tra va chạm với các item khác
+                    
                     PushableItem pushable = hit.GetComponent<PushableItem>();
                     if (pushable != null && !IsItemAlreadyFlying(pushable))
                     {
-                        // Nếu là item pushable và chưa được đẩy, thêm vào danh sách đẩy
+                        
                         itemsToPush.Add(pushable.transform);
-                        StartFlyingItem(pushable.transform, direction); // Đẩy item tiếp theo
+                        StartFlyingItem(pushable.transform, direction); 
                     }
 
-                    // Kiểm tra va chạm với các layer NoMove
+                    
                     if (((1 << hit.gameObject.layer) & NoMoveLayer) != 0)
                     {
-                        // Nếu va chạm với NoMoveLayer, dừng chuyển động
+                        
                         StopReverseMovement();
                         return;
                     }
                 }
 
-                // Kiểm tra tất cả các item đang được đẩy
+                
                 foreach (var flyingItem in itemsToPush)
                 {
-                    // Lặp lại va chạm cho từng item trong danh sách
+                    
                     Collider2D[] itemHits = Physics2D.OverlapCircleAll(flyingItem.position, 0.55f);
                     foreach (var hit in itemHits)
                     {
                         if (hit == null || hit.gameObject == flyingItem.gameObject) continue;
 
-                        // Kiểm tra va chạm với layer NoMove
+                       
                         if (((1 << hit.gameObject.layer) & NoMoveLayer) != 0)
                         {
-                            // Nếu va chạm với NoMoveLayer, dừng chuyển động
+                            
                             StopReverseMovement();
                             return;
                         }
@@ -660,21 +678,31 @@ public class WormController : MonoBehaviour
 
         while (true)
         {
-            // Kiểm tra giun
+            
             if (IsAllOutsideZone("SafeZoneA", GetAllWormParts()) || IsAllInsideZone("SafeZoneB", GetAllWormParts()))
             {
                 headFaceRenderer.sprite = faceDrop;
+                VanishWorm();
                 Debug.Log("Thua vì GIUN ra khỏi A hoặc toàn bộ giun vào B");
                 StartCoroutine(LoseGame());
                 yield break;
             }
 
-            // Kiểm tra Banana
+            
             GameObject[] bananas = GameObject.FindGameObjectsWithTag(tagBanana);
             if (bananas.Length > 0)
             {
                 if (IsAllOutsideZone("SafeZoneA", bananas) || IsAllInsideZone("SafeZoneB", bananas))
                 {
+                    foreach (var banana in bananas)
+                    {
+                        
+                        if (smokeEffectPrefab != null)
+                            Instantiate(smokeEffectPrefab, banana.transform.position, Quaternion.identity);
+
+                        
+                        banana.SetActive(false);
+                    }
                     StartCoroutine(SetFallingFace());
 
                     Debug.Log("Thua vì BANANA ra khỏi A hoặc vào hết B");
@@ -683,12 +711,21 @@ public class WormController : MonoBehaviour
                 }
             }
 
-            // Kiểm tra Medicine
+            
             GameObject[] medicines = GameObject.FindGameObjectsWithTag(tagMedicine);
             if (medicines.Length > 0)
             {
                 if (IsAllOutsideZone("SafeZoneA", medicines) || IsAllInsideZone("SafeZoneB", medicines))
                 {
+                    foreach (var medicine in medicines)
+                    {
+                        
+                        if (smokeEffectPrefab != null)
+                            Instantiate(smokeEffectPrefab, medicine.transform.position, Quaternion.identity);
+
+                        
+                        medicine.SetActive(false);
+                    }
                     StartCoroutine(SetFallingFace());
 
                     Debug.Log("Thua vì MEDICINE ra khỏi A hoặc vào hết B");
@@ -722,7 +759,8 @@ public class WormController : MonoBehaviour
     IEnumerator LoseGame()
     {
         canMove = false;
-        VanishWorm();
+        if (FallFoodSound != null)
+            audioSource.PlayOneShot(FallFoodSound);
         yield return new WaitForSeconds(1.5f);
         if (uiManager != null)
         {
@@ -836,5 +874,31 @@ public class WormController : MonoBehaviour
         }
         return false;
     }
+    bool IsHeadCollidingInDirection(Direction dir)
+    {
+        Vector3 headPos = transform.position;
+        Vector3 checkPos = headPos + GetMovementStep(dir);
 
+        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(checkPos, 0.1f);
+        for (int i = 0; i < hitColliders.Length; i++)
+        {
+            var collider = hitColliders[i];
+            if (collider != null && collider.transform != transform && bodyParts.Contains(collider.transform))
+            {
+                
+                if (collider.transform == bodyParts[bodyParts.Count - 1])
+                    continue;
+
+                Vector3 bodyPos = collider.transform.position;
+                Vector3 dirToBody = (bodyPos - headPos).normalized;
+                Vector3 moveDir = GetMovementStep(dir).normalized;
+                float dot = Vector3.Dot(moveDir, dirToBody);
+                if (dot > 0.9f)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

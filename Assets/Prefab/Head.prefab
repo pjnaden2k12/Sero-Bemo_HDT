@@ -305,6 +305,8 @@ MonoBehaviour:
   interactableLayer:
     serializedVersion: 2
     m_Bits: 8
+  eatFoodSound: {fileID: 8300000, guid: d53c0eac8befcb7449826724e72a9b09, type: 3}
+  FallFoodSound: {fileID: 8300000, guid: b8ead03af52530c4a9e22154b0b294d9, type: 3}
 --- !u!1 &4230712011082315353
 GameObject:
   m_ObjectHideFlags: 0

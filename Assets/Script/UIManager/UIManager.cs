@@ -1,8 +1,9 @@
-﻿using System;
-using UnityEngine;
-using UnityEngine.UI;
-using DG.Tweening;  // Import DOTween
+﻿using DG.Tweening;  // Import DOTween
+using System;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.Audio;
+using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
     public Button resetPlayPrefs;
@@ -25,8 +26,7 @@ public class UIManager : MonoBehaviour
     public GameObject groupLoseBt;
     public GameObject homePanel;
     public GameObject guidePanel;
-    public GameObject logo;  // Logo
-
+    public GameObject logo; 
     public event Action<string> OnDirectionButtonPressed;
     public event Action OnPlayPressed;
     public event Action OnResetPressed;
@@ -37,8 +37,14 @@ public class UIManager : MonoBehaviour
     private LevelManager levelManager;
     private CloudScreenEffect cloudEffect;
 
+    public AudioClip buttonClickSound;      
+    public AudioClip directionButtonSound;
+    private AudioSource audioSource;
+
     void Start()
     {
+        audioSource = gameObject.AddComponent<AudioSource>();
+
         levelManager = FindFirstObjectByType<LevelManager>();
 
         btnUp?.onClick.AddListener(() => OnDirectionButtonPressed?.Invoke("Up"));
@@ -68,6 +74,19 @@ public class UIManager : MonoBehaviour
         guideBt?.onClick.AddListener(OnPlayGuidePanel);
         exitBt?.onClick.AddListener(ExitGuidePanel);
         ShowHomePanel();
+        // Âm thanh cho các nhóm nút thường
+        AddSoundToButtons(homeButtons, buttonClickSound);
+        AddSoundToButtons(resetButtons, buttonClickSound);
+        AddSoundToButtons(undoBts, buttonClickSound);
+        AddSoundToButton(playBt, buttonClickSound);
+        AddSoundToButton(guideBt, buttonClickSound);
+        AddSoundToButton(exitBt, buttonClickSound);
+
+        // Âm thanh riêng cho nút điều hướng
+        AddSoundToButton(btnUp, directionButtonSound);
+        AddSoundToButton(btnDown, directionButtonSound);
+        AddSoundToButton(btnLeft, directionButtonSound);
+        AddSoundToButton(btnRight, directionButtonSound);
     }
 
     private void OnPlayGuidePanel()
@@ -231,4 +250,28 @@ public class UIManager : MonoBehaviour
                 HideGroupSettingAndMove();
         }
     }
+    private void AddSoundToButtons(Button[] buttons, AudioClip clip)
+    {
+        foreach (var btn in buttons)
+        {
+            AddSoundToButton(btn, clip);
+        }
+    }
+
+    private void AddSoundToButton(Button btn, AudioClip clip)
+    {
+        if (btn != null)
+        {
+            btn.onClick.AddListener(() => PlayButtonSound(clip));
+        }
+    }
+
+    private void PlayButtonSound(AudioClip clip)
+    {
+        if (clip != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+    }
+
 }
