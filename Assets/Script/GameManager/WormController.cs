@@ -59,7 +59,7 @@ public class WormController : MonoBehaviour
     public LayerMask NoMoveLayer;
     public LayerMask interactableLayer;
 
-    private bool hasWon=false;
+    private bool hasWon = false;
     private bool canMove = true;
     private bool isReversed = false;
     private Direction currentDirection;
@@ -124,9 +124,9 @@ public class WormController : MonoBehaviour
         {
             uiManager.OnDirectionButtonPressed += HandleDirectionInput;
         }
-        if (levelManager != null) 
+        if (levelManager == null)
             levelManager = FindFirstObjectByType<LevelManager>();
-        
+
 
         StartCoroutine(SetUpWorm());
     }
@@ -200,7 +200,7 @@ public class WormController : MonoBehaviour
         foreach (Transform part in bodyParts)
             part.DOScale(Vector3.one, duration).SetEase(Ease.OutBack);
 
-        yield return new WaitForSeconds(duration); 
+        yield return new WaitForSeconds(duration);
 
         safeZoneChecker = StartCoroutine(CheckWormOutsideSafeZoneRoutine());
     }
@@ -236,13 +236,13 @@ public class WormController : MonoBehaviour
         Collider2D obstacle = Physics2D.OverlapCircle(nextPos, 0.1f, NoMoveLayer);
         if (obstacle != null) yield break;
 
-        Collider2D hit = Physics2D.OverlapCircle(nextPos, 0.1f, interactableLayer);
+        Collider2D hit = Physics2D.OverlapCircle(nextPos, 0.05f, interactableLayer);
         if (hit != null)
         {
             PushableItem item = hit.GetComponent<PushableItem>();
             if (item != null)
             {
-                if (!item.TryPush(step))
+                if (!item.TryPush(step, 0))
                 {
                     Banana banana = item.GetComponent<Banana>();
                     if (banana != null)
@@ -261,7 +261,7 @@ public class WormController : MonoBehaviour
                         med.Eat();
                         StartCoroutine(HandleEatMedicine(movementDirection));
                         StartCoroutine(DelayedCheckWin());
-                       
+
 
                     }
                 }
@@ -275,7 +275,7 @@ public class WormController : MonoBehaviour
     void CheckMouthTargetAhead()
     {
         Vector3 aheadPos = transform.position + movementDirection;
-        Collider2D hit = Physics2D.OverlapCircle(aheadPos, 0.9f, interactableLayer);
+        Collider2D hit = Physics2D.OverlapCircle(aheadPos, 0.8f, interactableLayer);
         if (hit != null)
         {
             if (hit.CompareTag(tagBanana) || hit.CompareTag(tagMedicine))
@@ -366,7 +366,7 @@ public class WormController : MonoBehaviour
         mouthRenderer.enabled = true;
         rainbowRenderer.enabled = true;
 
-        TriggerReverseMovement(currentMoveDir); 
+        TriggerReverseMovement(currentMoveDir);
     }
 
     public void TriggerReverseMovement(Vector3 currentMoveDir)
@@ -386,7 +386,7 @@ public class WormController : MonoBehaviour
         canMove = false;
         isReversed = true;
 
-        Vector3 moveDir = currentMoveDir.normalized * -1f;
+        Vector3 moveDir = currentMoveDir.normalized * -1f;  // Di chuyển ngược lại
 
         flyTween = DOTween.To(() => wormRoot.position,
             x => wormRoot.position = x,
@@ -416,24 +416,31 @@ public class WormController : MonoBehaviour
                 {
                     Debug.Log("Worm flew out of camera view");
                     StopReverseMovement();
-                    StartCoroutine( LoseGame());
+                    StartCoroutine(LoseGame());
                     return;
                 }
 
-               
+                // Kiểm tra va chạm chỉ với đối tượng phía sau
                 foreach (Transform part in wormRoot)
                 {
-                    Collider2D[] hits = Physics2D.OverlapCircleAll(part.position, 0.5f);
+                    Collider2D[] hits = Physics2D.OverlapCircleAll(part.position, 0.55f);
                     foreach (Collider2D hit in hits)
                     {
                         if (hit == null || hit.gameObject == gameObject) continue;
 
-                        if (((1 << hit.gameObject.layer) & NoMoveLayer) != 0)
-                        {
-                            StopReverseMovement();
-                            return;
-                        }
+                        // Tính góc giữa hướng di chuyển và đối tượng bị va chạm
+                        Vector3 dirToHit = hit.transform.position - part.position;
+                        float angle = Vector3.Angle(dirToHit, moveDir);
 
+                        // Nếu đối tượng ở phía sau (góc nhỏ), kiểm tra lớp va chạm
+                        if (angle < 90f)  // Chỉ xét những đối tượng trong phạm vi 90 độ phía sau
+                        {
+                            if (((1 << hit.gameObject.layer) & NoMoveLayer) != 0)
+                            {
+                                StopReverseMovement();
+                                return;
+                            }
+                        }
                         PushableItem pushable = hit.GetComponent<PushableItem>();
                         if (pushable != null && !IsItemAlreadyFlying(pushable))
                         {
@@ -442,10 +449,13 @@ public class WormController : MonoBehaviour
                     }
                 }
             });
-        
+
     }
     void StartFlyingItem(Transform item, Vector3 direction)
     {
+        // Danh sách lưu các item đang được đẩy
+        List<Transform> itemsToPush = new List<Transform> { item };
+
         Tween itemTween = DOTween.To(() => item.position,
             x => item.position = x,
             item.position + direction * 100f,
@@ -454,20 +464,53 @@ public class WormController : MonoBehaviour
             .SetLoops(-1, LoopType.Incremental)
             .OnUpdate(() =>
             {
-                Collider2D[] hits = Physics2D.OverlapCircleAll(item.position, 0.54f);
+                Collider2D[] hits = Physics2D.OverlapCircleAll(item.position, 0.3f);
+
                 foreach (var hit in hits)
                 {
                     if (hit == null || hit.gameObject == item.gameObject) continue;
+
+                    // Kiểm tra va chạm với các item khác
+                    PushableItem pushable = hit.GetComponent<PushableItem>();
+                    if (pushable != null && !IsItemAlreadyFlying(pushable))
+                    {
+                        // Nếu là item pushable và chưa được đẩy, thêm vào danh sách đẩy
+                        itemsToPush.Add(pushable.transform);
+                        StartFlyingItem(pushable.transform, direction); // Đẩy item tiếp theo
+                    }
+
+                    // Kiểm tra va chạm với các layer NoMove
                     if (((1 << hit.gameObject.layer) & NoMoveLayer) != 0)
                     {
+                        // Nếu va chạm với NoMoveLayer, dừng chuyển động
                         StopReverseMovement();
                         return;
+                    }
+                }
+
+                // Kiểm tra tất cả các item đang được đẩy
+                foreach (var flyingItem in itemsToPush)
+                {
+                    // Lặp lại va chạm cho từng item trong danh sách
+                    Collider2D[] itemHits = Physics2D.OverlapCircleAll(flyingItem.position, 0.55f);
+                    foreach (var hit in itemHits)
+                    {
+                        if (hit == null || hit.gameObject == flyingItem.gameObject) continue;
+
+                        // Kiểm tra va chạm với layer NoMove
+                        if (((1 << hit.gameObject.layer) & NoMoveLayer) != 0)
+                        {
+                            // Nếu va chạm với NoMoveLayer, dừng chuyển động
+                            StopReverseMovement();
+                            return;
+                        }
                     }
                 }
             });
 
         flyingItemTweens.Add(itemTween);
     }
+
 
     void StopReverseMovement()
     {
@@ -481,7 +524,7 @@ public class WormController : MonoBehaviour
         UpdateHistoryAfterReverse();
         ResetFace();
         canMove = true;
-        isReversed = false;       
+        isReversed = false;
     }
     void UpdateHistoryAfterReverse()
     {
@@ -536,7 +579,7 @@ public class WormController : MonoBehaviour
     }
     IEnumerator SetFallingFace()
     {
-        mouthRenderer.enabled=false;
+        mouthRenderer.enabled = false;
         headFaceRenderer.sprite = facefalleat;
         yield return new WaitForSeconds(0.7f);
         headFaceRenderer.sprite = facefalleatv2;
@@ -564,7 +607,7 @@ public class WormController : MonoBehaviour
         Vector3 direction = (beforeTail.position - tail.position).normalized;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
 
-        tail.rotation = Quaternion.Euler(0f, 0f, angle - 180f); 
+        tail.rotation = Quaternion.Euler(0f, 0f, angle - 180f);
     }
 
 
@@ -622,7 +665,7 @@ public class WormController : MonoBehaviour
             {
                 headFaceRenderer.sprite = faceDrop;
                 Debug.Log("Thua vì GIUN ra khỏi A hoặc toàn bộ giun vào B");
-                StartCoroutine( LoseGame());
+                StartCoroutine(LoseGame());
                 yield break;
             }
 
@@ -678,6 +721,7 @@ public class WormController : MonoBehaviour
 
     IEnumerator LoseGame()
     {
+        canMove = false;
         VanishWorm();
         yield return new WaitForSeconds(1.5f);
         if (uiManager != null)
@@ -686,52 +730,22 @@ public class WormController : MonoBehaviour
         }
 
         Debug.Log("Game Over!");
-        
+
     }
     void WinGame()
     {
         levelManager.OnLevelCompleted();
-        StartCoroutine(HandleWinSequence());
+
     }
-
-    IEnumerator HandleWinSequence()
-    {
-        CloudScreenEffect cloud = FindFirstObjectByType<CloudScreenEffect>();
-
-        // Bắt đầu hiệu ứng mây vào
-        Coroutine enterCloud = null;
-        if (cloud != null)
-        {
-            enterCloud = StartCoroutine(cloud.EnterScreenEffect());
-        }
-
-        // Đợi 0.7s rồi chuyển level
-        yield return new WaitForSeconds(0.4f);
-        LevelManager levelManager = FindFirstObjectByType<LevelManager>();
-        if (levelManager != null)
-        {
-            levelManager.NextLevel();
-        }
-
-       
-
-        yield return new WaitForSeconds(1.5f);
-
-        if (cloud != null)
-        {
-            yield return cloud.ExitScreenEffect();
-        }
-    }
-
 
     IEnumerator DelayedCheckWin()
     {
-        yield return null; 
+        yield return null;
         CheckWinCondition();
     }
     public void VanishWorm()
     {
-        StartCoroutine(VanishWormRoutine());        
+        StartCoroutine(VanishWormRoutine());
     }
 
     IEnumerator VanishWormRoutine()

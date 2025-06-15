@@ -3381,6 +3381,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Stone
       objectReference: {fileID: 0}
+    - target: {fileID: 6997884472163964903, guid: 3da43c70bb2cdc04ab8872a4fc7ebb18, type: 3}
+      propertyPath: m_Size.y
+      value: 0.8931926
+      objectReference: {fileID: 0}
+    - target: {fileID: 6997884472163964903, guid: 3da43c70bb2cdc04ab8872a4fc7ebb18, type: 3}
+      propertyPath: m_Offset.y
+      value: -0.259972
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3504,6 +3512,14 @@ PrefabInstance:
     - target: {fileID: 1486372316700407131, guid: 105c69cca69a1914da3372fb84f87060, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1525533588757663143, guid: 105c69cca69a1914da3372fb84f87060, type: 3}
+      propertyPath: m_Size.y
+      value: 0.539839
+      objectReference: {fileID: 0}
+    - target: {fileID: 1525533588757663143, guid: 105c69cca69a1914da3372fb84f87060, type: 3}
+      propertyPath: m_Offset.y
+      value: -0.12767756
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

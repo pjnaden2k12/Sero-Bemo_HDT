@@ -210,11 +210,11 @@ BoxCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.0018520355, y: 0.0013661981}
+  m_Offset: {x: 0.0058124065, y: 0.023388326}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -224,7 +224,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.88021564, y: 0.80943465}
+  m_Size: {x: 0.34714937, y: 0.3959986}
   m_EdgeRadius: 0
 --- !u!50 &3684528285329596566
 Rigidbody2D:
@@ -272,10 +272,8 @@ MonoBehaviour:
   - Right
   - Right
   - Right
-  btnUp: {fileID: 0}
-  btnDown: {fileID: 0}
-  btnLeft: {fileID: 0}
-  btnRight: {fileID: 0}
+  uiManager: {fileID: 0}
+  levelManager: {fileID: 0}
   bodyPrefab: {fileID: 2104995442288989565, guid: d15b87d68706deb4898c0665951a5101, type: 3}
   tailPrefab: {fileID: 8398028049411720518, guid: e65b12b775425004bb75aaa3e2778a71, type: 3}
   initialBodyCount: 4
@@ -296,6 +294,9 @@ MonoBehaviour:
   faceDrop: {fileID: 21300000, guid: b3855dded4828d04e90955c9a0a46ce1, type: 3}
   facefalleat: {fileID: 21300000, guid: 058d38176b5736545a8b65053f62cb95, type: 3}
   facefalleatv2: {fileID: 21300000, guid: e0737aac76049c24a8b65e67c5ef55c5, type: 3}
+  holeRenderer: {fileID: 0}
+  holeOpen: {fileID: 0}
+  holeClose: {fileID: 0}
   tagBanana: Banana
   tagMedicine: Medicine
   NoMoveLayer:
@@ -303,8 +304,7 @@ MonoBehaviour:
     m_Bits: 256
   interactableLayer:
     serializedVersion: 2
-    m_Bits: 0
-  safeCheckInterval: 0.5
+    m_Bits: 8
 --- !u!1 &4230712011082315353
 GameObject:
   m_ObjectHideFlags: 0

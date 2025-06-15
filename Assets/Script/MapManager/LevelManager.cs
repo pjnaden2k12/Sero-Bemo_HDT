@@ -1,25 +1,30 @@
-﻿using System.Collections;
+﻿using DG.Tweening;
 using UnityEngine;
-using DG.Tweening;
-
+using System.Collections;
 public class LevelManager : MonoBehaviour
 {
     public MapDatabase mapDatabase;
-    public int currentLevel = 1;
+    private int currentLevel = 1;
     private GameObject currentMap;
     public CloudScreenEffect cloudEffect;
     public UIManager uiManager;
 
+    private const string LevelProgressKey = "LevelProgress";
+    private const string LevelCompletedKey = "LevelCompleted";
+
     void Start()
     {
+        uiManager = FindFirstObjectByType<UIManager>();
+
         if (uiManager != null)
         {
             uiManager.OnPlayPressed += OnPlayPressed;
             uiManager.OnHomePressed += OnHomePressed;
             uiManager.OnResetPressed += OnResetPressed;
+            uiManager.OnResetPlayPrefsPressed += OnResetPlayPrefsPressed;
 
-            uiManager.currentLevel = currentLevel;
-            uiManager.SetLevelCompleted(false);
+            LoadLevelProgress();
+            uiManager.ShowHomePanel();
         }
     }
 
@@ -35,9 +40,6 @@ public class LevelManager : MonoBehaviour
 
     public void LoadLevel(int level)
     {
-        if (uiManager != null)
-            uiManager.currentLevel = level;
-
         StartCoroutine(LoadLevelRoutine(level));
     }
 
@@ -46,8 +48,8 @@ public class LevelManager : MonoBehaviour
         if (cloudEffect != null)
             yield return cloudEffect.EnterScreenEffect();
 
-        KillAllDOTween();           // <<< Kill toàn bộ tween trước khi làm gì đó
-        KillDotweenAndDestroyMap(); // <<< Sau đó mới destroy map
+        KillAllDOTween();
+        KillDotweenAndDestroyMap();
 
         yield return null;
 
@@ -74,58 +76,66 @@ public class LevelManager : MonoBehaviour
     private void OnPlayPressed()
     {
         LoadLevel(currentLevel);
-        uiManager?.SetLevelCompleted(false);
     }
 
     private void OnHomePressed()
     {
-        KillAllDOTween();           // <<< Kill tween toàn cục (quan trọng)
-        KillDotweenAndDestroyMap(); // <<< Destroy map sau khi kill tween
+        StartCoroutine(ShowCloudEffectThenReturnHome());
+    }
 
-        currentLevel = 1;
+    private IEnumerator ShowCloudEffectThenReturnHome()
+    {
+        if (cloudEffect != null)
+        {
+            yield return cloudEffect.EnterScreenEffect();
+        }
+
+        KillAllDOTween();
+        KillDotweenAndDestroyMap();
+
+        SaveLevelProgress();
 
         if (uiManager != null)
         {
-            uiManager.currentLevel = currentLevel;
-            uiManager.SetLevelCompleted(false);
             uiManager.ShowHomePanel();
+        }
+
+        if (cloudEffect != null)
+        {
+            yield return cloudEffect.ExitScreenEffect();
         }
     }
 
     private void OnResetPressed()
     {
-        KillAllDOTween();           // <<< Kill tween trước khi reload
+        KillAllDOTween();
         LoadLevel(currentLevel);
-        uiManager?.SetLevelCompleted(false);
+        StartCoroutine(DelaySetFalseLoseUI());
     }
 
     public void OnLevelCompleted()
     {
         currentLevel++;
-        uiManager?.SetLevelCompleted(true);
+        SaveLevelProgress();
+        LoadNextLevel();
     }
 
-    public void NextLevel()
+    public void LoadNextLevel()
     {
-        LoadLevel(currentLevel + 1);
+        LoadLevel(currentLevel);
+        SaveLevelProgress();
     }
 
-    /// <summary>
-    /// Kill DOTween trong currentMap và destroy map.
-    /// </summary>
     private void KillDotweenAndDestroyMap()
     {
         if (currentMap != null)
         {
-            DOTween.Kill(currentMap, complete: false); // Chỉ kill tween liên quan currentMap và con
+            DOTween.Kill(currentMap, complete: false);
             Destroy(currentMap);
             currentMap = null;
         }
     }
 
-    /// <summary>
-    /// Kill toàn bộ tween đang hoạt động (nếu có tween không ràng buộc target).
-    /// </summary>
     private void KillAllDOTween()
     {
         if (DOTween.TotalPlayingTweens() > 0)
@@ -133,5 +143,42 @@ public class LevelManager : MonoBehaviour
             DOTween.KillAll(false);
             Debug.Log("All DOTween tweens have been killed.");
         }
+    }
+
+    private IEnumerator DelaySetFalseLoseUI()
+    {
+        yield return new WaitForSeconds(1f);
+        uiManager?.groupLoseBt.SetActive(false);
+        if (uiManager != null)
+        {
+            uiManager.ShowGroupSettingAndMove();
+        }
+    }
+
+    private void SaveLevelProgress()
+    {
+        PlayerPrefs.SetInt(LevelProgressKey, currentLevel);
+        PlayerPrefs.Save();
+    }
+
+    private void LoadLevelProgress()
+    {
+        currentLevel = PlayerPrefs.GetInt(LevelProgressKey, 1);
+    }
+
+    public bool IsLevelCompleted()
+    {
+        return currentLevel > 1;
+    }
+
+    public int GetCurrentLevel()
+    {
+        return currentLevel;
+    }
+
+    private void OnResetPlayPrefsPressed()
+    {
+        currentLevel = 1;
+        SaveLevelProgress();
     }
 }

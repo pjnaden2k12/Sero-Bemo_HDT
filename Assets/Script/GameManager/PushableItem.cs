@@ -38,8 +38,13 @@ public class PushableItem : MonoBehaviour
         }
     }
 
-    public bool TryPush(Vector3 direction)
+    public bool TryPush(Vector3 direction, int depth = 0)
     {
+        if (depth > 10)  
+        {
+            Debug.LogWarning("Exceeded push depth limit!");
+            return false;
+        }
         Vector3 targetPos = transform.position + direction;
         Collider2D hit = Physics2D.OverlapCircle(targetPos, 0.1f, obstacleLayer | noMoveLayer);
 

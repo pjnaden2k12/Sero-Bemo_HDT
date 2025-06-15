@@ -21,13 +21,31 @@ MonoBehaviour:
     - Right
     - Right
   - level: 2
-    mapPrefab: {fileID: 8676225871807759309, guid: 250ed104aee325d48a30ed2a51612a48, type: 3}
+    mapPrefab: {fileID: 8676225871807759309, guid: c1c85e3b4088d2044a23473cd5a431ab, type: 3}
     initialBodyCount: 1
     moveSequence:
     - Down
+    - Right
+    - Up
+    - Up
+  - level: 3
+    mapPrefab: {fileID: 8676225871807759309, guid: 1c2852192f05ac84b98c1d367623ef0a, type: 3}
+    initialBodyCount: 2
+    moveSequence:
     - Down
     - Down
-  - level: 0
-    mapPrefab: {fileID: 0}
-    initialBodyCount: 0
-    moveSequence: []
+    - Left
+    - Left
+    - Left
+    - Up
+    - Left
+  - level: 4
+    mapPrefab: {fileID: 8676225871807759309, guid: a123e92dd369185439f8b0130e67ab27, type: 3}
+    initialBodyCount: 1
+    moveSequence:
+    - Down
+    - Right
+    - Up
+    - Up
+    - Up
+    - Left
