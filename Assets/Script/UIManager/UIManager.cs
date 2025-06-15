@@ -276,9 +276,7 @@ public class UIManager : MonoBehaviour
     }
     public void ShowLevel1EffectPanelWithEffect()
     {
-        groupMoveBt?.SetActive(false);
-        groupSettingBt?.SetActive(false);
-        groupLoseBt?.SetActive(false);
+
         if (level1EffectPanel == null) return;
 
         level1EffectPanel.SetActive(true);
